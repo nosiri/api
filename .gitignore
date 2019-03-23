@@ -2,4 +2,4 @@
 /.idea
 Homestead.json
 Homestead.yaml
-api/.env
+.env

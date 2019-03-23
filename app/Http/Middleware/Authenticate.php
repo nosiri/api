@@ -33,11 +33,10 @@ class Authenticate
      * @param  string|null  $guard
      * @return mixed
      */
-    public function handle($request, Closure $next, $guard = null)
-    {
-        if ($this->auth->guard($guard)->guest()) {
-            return response()->json(['status'=> false, 'result'=>'Unauthorized'], 401);
-        }
+    public function handle($request, Closure $next, $guard = null) {
+//        if ($this->auth->guard($guard)->guest()) {
+//            return response()->json(['status'=> false, 'result'=>'Unauthorized'], 401);
+//        }
 
         return $next($request);
     }

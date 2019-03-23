@@ -11,75 +11,45 @@
 |
 */
 
-$router->group(['middleware' => ['auth', 'validator']], function () use ($router) {
+$router->group(['middleware' => ['auth']], function () use ($router) {
     $router->get('/', function () use ($router) {
-        return $router->app->version();
+        return response()->json(['status' => true, 'version' => 1]);
     });
 
     $router->group(['prefix' => 'user'], function () use ($router) {
-        $router->get('signup', ['middleware' => 'auth'], 'UserController@signup');
-        $router->get('signin', ['middleware' => 'auth'], 'UserController@signin');
+        $router->get('signup', 'UserController@signup');
+        $router->get('signin', 'UserController@signin');
     });
 
-    $router->get('date', function () {
-        return response()->json(['a' => time()]);
-    });
+    $router->get('date', 'ResponseController@date');
 
-    $router->get('dollar', function () {
+    $router->get('dollar', 'ResponseController@dollar');
 
-    });
+    $router->get('proxy', 'ResponseController@proxy');
 
-    $router->get('proxy', function () {
+    $router->post('soundcloud', 'ResponseController@soundcloud');
 
-    });
+    $router->post('youtube', 'ResponseController@youtube');
 
-    $router->get('soundcloud/{link}', function ($link) {
+    $router->post('translate', 'ResponseController@translate');
 
-    });
+    $router->post('npm', 'ResponseController@npm');
 
-    $router->get('youtube/{link}', function ($link) {
+    $router->post('packagist', 'ResponseController@packagist');
 
-    });
+    $router->post('gravatar', 'ResponseController@gravatar');
 
-    $router->get('translate/{text}', function ($text) {
+    $router->post('bankDetector', 'ResponseController@bankDetector');
 
-    });
+    $router->post('dictionary', 'ResponseController@dictionary');
 
-    $router->get('npm/{query}', function ($query) {
+    $router->post('omen', 'ResponseController@omen');
 
-    });
+    $router->post('emamsadegh', 'ResponseController@emamsadegh');
 
-    $router->get('packagist/{query}', function ($query) {
+    $router->post('weather', 'ResponseController@weather');
 
-    });
-
-    $router->get('gravatar/{email}', function ($email) {
-
-    });
-
-    $router->get('bankDetector/{card: [0-9]{16}}', function ($cardNumber) {
-
-    });
-
-    $router->get('word/{word}', function ($word) {
-
-    });
-
-    $router->get('omen[/{id: [0-9]{3}}]', function ($omenId) {
-
-    });
-
-    $router->get('emamsadegh/{name}', function ($name) {
-
-    });
-
-    $router->get('weather/{location}', function ($location) {
-
-    });
-
-    $router->get('dns/{domain}', function ($domain) {
-
-    });
+    $router->post('dns', 'ResponseController@dns');
 
     $router->group(['prefix' => 'filimo'], function () use ($router) {
         $router->get('search/{query}', function ($query) {
