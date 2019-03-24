@@ -31,11 +31,9 @@ $router->group(['middleware' => ['auth']], function () use ($router) {
 
     $router->post('youtube', 'ResponseController@youtube');
 
-    $router->post('translate', 'ResponseController@translate');
-
     $router->post('npm', 'ResponseController@npm');
 
-    $router->post('packagist', 'ResponseController@packagist');
+    $router->get('packagist', 'ResponseController@packagist');
 
     $router->post('gravatar', 'ResponseController@gravatar');
 

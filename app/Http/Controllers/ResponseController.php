@@ -31,8 +31,8 @@ class ResponseController extends Controller {
     }
 
     public function proxy() {
-        $lastUpdate = json_decode(AppHelper::instance()->Nassaab("info", "HFmHiMLkQI"), true)["info"][3]["subtitle"];
-        $proxy = AppHelper::instance()->Nassaab("install", "HFmHiMLkQI");
+        $lastUpdate = json_decode(AppHelper::instance()->nassaab("info", "HFmHiMLkQI"), true)["info"][3]["subtitle"];
+        $proxy = AppHelper::instance()->nassaab("install", "HFmHiMLkQI");
 
         return response()->json(['status' => true, 'result' => ['proxy' => $proxy, 'last_update' => $lastUpdate]]);
     }
@@ -47,7 +47,7 @@ class ResponseController extends Controller {
             return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
         }
 
-        $getAudio = json_decode(AppHelper::instance()->Receiver($audio));
+        $getAudio = json_decode(AppHelper::instance()->receiver($audio));
 
         if (!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
             return response()->json(['status' => false, 'result' => ['error' => 'can\'t fetch audio source']], 503);
@@ -69,7 +69,7 @@ class ResponseController extends Controller {
             return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
         }
 
-        $getVideo = json_decode(AppHelper::instance()->Receiver($video, true));
+        $getVideo = json_decode(AppHelper::instance()->receiver($video, true));
 
         if (!in_array($getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0) {
             return response()->json(['status' => false, 'result' => ['error' => 'can\'t fetch video source']], 503);
@@ -83,45 +83,120 @@ class ResponseController extends Controller {
         }
     }
 
-    public function translate(Request $request) {
-        $query = urlencode($request->get('query'));
-        $key = env('YANDEX_TOKEN');
+    public function npm(Request $request) {
+        $query = trim($request->get('query'));
 
         $validator = Validator::make($request->all(), [
-            'query' => 'required|max:512'
+            'query' => 'required|string'
         ]);
         if ($validator->fails()) {
             return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
         }
 
-        $translate = json_decode(file_get_contents("https://translate.yandex.net/api/v1.5/tr.json/translate?key=$key&format=plain&lang=fa&text=$query"));
-        if ($translate->code != 200) return response()->json(['status' => false, 'result' => ['error' => 'Translator error']], 503);
+        $search = json_decode(file_get_contents("https://api.npms.io/v2/search?q=$query&size=25&from=0"));
+        if (!$search->total) return response()->json(['status' => false, 'result' => ['error' => 'not found']]);
         else {
-            $json = Storage::disk('local')->get('isoCodes.json');
-            $isoCodes = json_decode($json);
-            $explode = explode("-", $translate->lang)[0];
+            $packages = [];
+            for ($i = 0; $i < count($search->results); $i++) {
+                $package = $search->results[$i]->package;
 
-            $fromLang = $isoCodes->$explode->name;
-            $translated_text = $translate->text[0];
-
-            return response()->json(['status' => true, 'result' => ['from_lang' => $fromLang, 'translated_text' => $translated_text]]);
+                $packages[] = [
+                    'title' => $package->name,
+                    'description' => @$package->description,
+                    'link' => $package->links->npm
+                ];
+            }
+            return response()->json(['status' => true, 'result' => ['packages' => $packages]]);
         }
     }
 
-    public function npm() {
+    public function packagist(Request $request) {
+        $query = trim($request->get('query'));
 
+        $validator = Validator::make($request->all(), [
+            'query' => 'required|string'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
+
+        $search = json_decode(file_get_contents("https://packagist.org/search.json?q=$query&per_page=25&page=1"));
+        if (!$search->total) return response()->json(['status' => false, 'result' => ['error' => 'not found']]);
+        else {
+            $packages = [];
+            for ($i = 0; $i < count($search->results); $i++) {
+                $package = $search->results[$i]->package;
+
+                $packages[] = [
+                    'title' => $package->name,
+                    'description' => @$package->description,
+                    'link' => $package->url
+                ];
+            }
+            return response()->json(['status' => true, 'result' => ['packages' => $packages]]);
+        }
     }
 
-    public function packagist() {
+    public function gravatar(Request $request) {
+        $email = trim($request->get('email'));
 
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
+
+        $email = md5($email);
+        $url = "https://s.gravatar.com/avatar/$email?s=256";
+
+        return response()->json(['status' => true, 'result' => ['url' => $url]]);
     }
 
-    public function gravatar() {
+    public function bankDetector(Request $request) {
+        $card = AppHelper::instance()->convert(trim($request->get('card')));
 
-    }
+        $validator = Validator::make($request->all(), [
+            'card' => 'required|size:16'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
 
-    public function bankDetector() {
+        $banks = [
+            '603799' => "ملی ایران",
+            '589210' => "سپه",
+            '627648' => "توسعه صادرات",
+            '627961' => "صنعت و معدن",
+            '603770' => "کشاورزی",
+            '628023' => "مسکن",
+            '627760' => "پست بانک ایران",
+            '502908' => "توسعه تعاون",
+            '627412' => "اقتصاد نوین",
+            '622106' => "پارسیان",
+            '502229' => "پاسارگاد",
+            '627488' => "کارآفرین",
+            '621986' => "سامان",
+            '639346' => "سینا",
+            '639607' => "سرمایه",
+            '636214' => "تات",
+            '502806' => "شهر",
+            '502938' => "دی",
+            '603769' => "صادرات",
+            '610433' => "ملت",
+            '627353' => "تجارت",
+            '589463' => "رفاه",
+            '627381' => "انصار",
+            '639370' => "مهر اقتصاد"
+        ];
 
+        $isValid = AppHelper::instance()->bankCardCheck($card);
+        $card = substr($card, 0, 6);
+
+        if (!empty($banks[$card])) $bank = $banks[$card];
+        else return response()->json(['status' => true, 'result' => ['error' => "Card number is not valid"]]);
+
+        return response()->json(['status' => true, 'result' => ['bank' => $bank, 'valid' => $isValid]]);
     }
 
     public function dictionary(Request $request) {
