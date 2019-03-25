@@ -13,57 +13,52 @@
 
 $router->group(['middleware' => ['auth']], function () use ($router) {
     $router->get('/', function () use ($router) {
-        return response()->json(['status' => true, 'version' => 1]);
+        return response()->json(['status' => true, 'result' => ['version' => env('APP_VERSION')]]);
     });
 
-    $router->group(['prefix' => 'user'], function () use ($router) {
-        $router->get('signup', 'UserController@signup');
-        $router->get('signin', 'UserController@signin');
-    });
+//    $router->group(['prefix' => 'user'], function () use ($router) {
+//        $router->get('signup', 'UserController@signup');
+//        $router->get('signin', 'UserController@signin');
+//    });
 
-    $router->get('date', 'ResponseController@date');
+    $router->get('date', 'MainController@date');
 
-    $router->get('dollar', 'ResponseController@dollar');
+    $router->get('dollar', 'MainController@dollar');
 
-    $router->get('proxy', 'ResponseController@proxy');
+    $router->get('proxy', 'MainController@proxy');
 
-    $router->post('soundcloud', 'ResponseController@soundcloud');
+    $router->get('soundcloud', 'MainController@soundcloud');
 
-    $router->post('youtube', 'ResponseController@youtube');
+    $router->get('youtube', 'MainController@youtube');
 
-    $router->post('npm', 'ResponseController@npm');
+    $router->get('npm', 'MainController@npm');
 
-    $router->get('packagist', 'ResponseController@packagist');
+    $router->get('packagist', 'MainController@packagist');
 
-    $router->post('gravatar', 'ResponseController@gravatar');
+    $router->get('gravatar', 'MainController@gravatar');
 
-    $router->post('bankDetector', 'ResponseController@bankDetector');
+    $router->get('bankDetector', 'MainController@bankDetector');
 
-    $router->post('dictionary', 'ResponseController@dictionary');
+    $router->get('dictionary', 'MainController@dictionary');
 
-    $router->post('omen', 'ResponseController@omen');
+    $router->get('omen', 'MainController@omen');
 
-    $router->post('emamsadegh', 'ResponseController@emamsadegh');
+    $router->get('emamsadegh', 'MainController@emamsadegh');
 
-    $router->post('weather', 'ResponseController@weather');
+    $router->get('weather', 'MainController@weather');
 
-    $router->post('dns', 'ResponseController@dns');
+    $router->get('dns', 'MainController@dns');
+
+    $router->get('nassaab', 'MainController@nassaab');
 
     $router->group(['prefix' => 'filimo'], function () use ($router) {
-        $router->get('search/{query}', function ($query) {
-            // Matches The "/filimo/search/{something}" URL
-        });
-        $router->get('get/{id}', function ($id) {
-            // Matches The "/filimo/get/{something}" URL
-        });
+        $router->get('search', 'FilimoController@search');
+        $router->get('get', 'FilimoController@fetch');
+        $router->get('user', 'FilimoController@finder');
     });
 
     $router->group(['prefix' => 'namava'], function () use ($router) {
-        $router->get('search/{query}', function ($query) {
-            // Matches The "/namava/search/{something}" URL
-        });
-        $router->get('get/{id}', function ($id) {
-            // Matches The "/namava/get/{something}" URL
-        });
+        $router->get('search', 'NamavaController@search');
+        $router->get('get', 'NamavaController@fetch');
     });
 });

@@ -51,6 +51,23 @@ class AppHelper {
         return array_sum($res) % 10 == 0? true : false;
     }
 
+    public function realIP() {
+        $IP = null;
+        if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
+            $_SERVER['REMOTE_ADDR'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
+            $_SERVER['HTTP_CLIENT_IP'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
+        }
+        $client  = @$_SERVER['HTTP_CLIENT_IP'];
+        $forward = @$_SERVER['HTTP_X_FORWARDED_FOR'];
+        $remote  = $_SERVER['REMOTE_ADDR'];
+
+        if (filter_var($client, FILTER_VALIDATE_IP)) $IP = $client;
+        else if (filter_var($forward, FILTER_VALIDATE_IP)) $IP = $forward;
+        else $IP = $remote;
+
+        return $IP;
+    }
+
     public static function instance() {
         return new AppHelper();
     }

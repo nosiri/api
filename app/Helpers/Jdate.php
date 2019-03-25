@@ -4,8 +4,7 @@ namespace App\Helpers;
 
 class Jdate {
     public function jdate($format, $timestamp = '', $none = '', $time_zone = 'Asia/Tehran', $tr_num = 'fa') {
-
-        $T_sec = 0;/* <= رفع خطاي زمان سرور ، با اعداد '+' و '-' بر حسب ثانيه */
+        $T_sec = 0;
 
         if ($time_zone != 'local') date_default_timezone_set(($time_zone == '') ? 'Asia/Tehran' : $time_zone);
         $ts = $T_sec + (($timestamp == '' or $timestamp == 'now') ? time() : $this->tr_num($timestamp));
@@ -22,7 +21,6 @@ class Jdate {
                 continue;
             }
             switch ($sub) {
-
                 case'E':
                 case'R':
                 case'x':
@@ -228,7 +226,6 @@ class Jdate {
         foreach ($array as $type => $num) {
             $num = (int)$this->tr_num($num);
             switch ($type) {
-
                 case'ss':
                     $sl = strlen($num);
                     $xy3 = substr($num, 2 - $sl, 1);
@@ -237,7 +234,8 @@ class Jdate {
                         $p34 = '';
                         $k34 = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
                         $h34 = $k34[substr($num, 2 - $sl, 2) - 10];
-                    } else {
+                    }
+                    else {
                         $xy4 = substr($num, 3 - $sl, 1);
                         $p34 = ($xy3 == 0 or $xy4 == 0) ? '' : ' و ';
                         $k3 = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];

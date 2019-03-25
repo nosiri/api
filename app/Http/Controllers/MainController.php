@@ -6,12 +6,11 @@ use App\Helpers\AppHelper;
 use App\Helpers\Jdate;
 use DOMDocument;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class ResponseController extends Controller {
+class MainController extends Controller {
     public function date() {
-        $date = Jdate::instance()->jdate("Y/m/d");
+        $date = Jdate::instance()->jdate("Y/m/d", null, null, null, 'en');
         return response()->json(['status' => true, 'result' => ['date' => $date]]);
     }
 
@@ -222,19 +221,106 @@ class ResponseController extends Controller {
         return response()->json(['status' => true, 'result' => [$result]]);
     }
 
-    public function omen() {
+    public function omen(Request $request) {
+        $id = trim($request->get('id'));
 
+        $validator = Validator::make($request->all(), [
+            'id' => 'integer|min:1|max:159'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
+
+        $omenId = !empty($id) ? (int)$id : rand(1, 159);
+        $omenURL = "http://www.beytoote.com/images/Hafez/$omenId.gif";
+
+        return response()->json(['status' => true, 'result' => ['id' => $omenId, 'url' => $omenURL]]);
     }
 
-    public function emamsadegh() {
+    public function emamsadegh(Request $request) {
+        $name = trim($request->get('name'));
 
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|min:4|max:255'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
+
+        $source = "https://iandish.ir/web/list?qs=$name&src=1";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $source);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+        $html = curl_exec($ch);
+        curl_close($ch);
+
+        $result = [];
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        foreach ($dom->getElementsByTagName('div') as $div) {
+            if ($div->getAttribute('class') == "user") {
+                $value = explode("\n", trim($div->textContent));
+                $user = $value[0];
+                $role = trim(str_replace("-", "", $value[1]));
+
+                $result[] = [
+                    'name' => $user,
+                    'role' => $role
+                ];
+            }
+        }
+
+        if (!count($result)) return response()->json(['status' => false, 'result' => ['error' => 'not found']]);
+        return response()->json(['status' => true, 'result' => ['users' => $result]]);
     }
 
-    public function weather() {
+    public function weather(Request $request) {
+        $location = trim($request->get('location'));
 
+        $validator = Validator::make($request->all(), [
+            'id' => 'string|min:4|max:20'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
+
+        $location = !empty($location) ? $location : AppHelper::instance()->realIP();
+        $locationName = str_replace("\n", "" ,file_get_contents("https://wttr.in/$location?format=%l"));
+        if (strstr($locationName, "Unknow location") || $locationName == "not found") return response()->json(['status' => false, 'result' => ['error' => 'Location not found']]);
+        $weather = str_replace("\n", "", file_get_contents("http://wttr.in/$location?format=%c+%t"));
+
+        return response()->json(['status' => true, 'result' => ['location' => $locationName, 'weather' => $weather]]);
     }
 
-    public function dns() {
+    public function dns(Request $request) {
+        $domain = trim($request->get('domain'));
+
+        $validator = Validator::make($request->all(), [
+            'domain' => 'required|url'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
+
+        $domain = trim(str_replace(["https","http","://","/"], "", $domain));
+        if (substr($domain, 0, 4) == "www.") $domain = substr($domain, 4);
+
+        $url = "https://dnsdumpster.com/static/map/$domain.png";
+        if (!@file_get_contents($url)) return response()->json(['status' => false, 'result' => ['error' => 'The domain is invalid']]);
+        else return response()->json(['status' => true, 'result' => ['domain' => $domain, 'dns' => $url]]);
+    }
+
+    public function nassaab(Request $request) {
+        $item = trim($request->get('item'));
+
+        $validator = Validator::make($request->all(), [
+            'item' => 'required|string|max:20'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
+        }
 
     }
 }
