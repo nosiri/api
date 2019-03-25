@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 class MainController extends Controller {
     public function init() {
         $IP = AppHelper::instance()->realIP();
-        $date = Jdate::instance()->jdate("Y/m/d", null, null, null, 'en');
+        $date = Jdate::instance()->jdate("Y/n/j", null, null, null, 'en');
 
         return response()->json(['status' => true, 'result' => ['ip' => $IP, 'date' => $date]]);
     }
@@ -26,7 +26,7 @@ class MainController extends Controller {
         curl_close($ch);
         $dom = new DOMDocument();
         @$dom->loadHTML($result);
-        $dollar = $dom->getElementById('usd1_top')->textContent;
+        $dollar = (int)$dom->getElementById('usd1_top')->textContent;
 
         return response()->json(['status' => true, 'result' => ['dollar' => $dollar]]);
     }
@@ -288,9 +288,15 @@ class MainController extends Controller {
             return response()->json(['status' => false, 'result' => ['error' => $validator->errors()->first()]], 400);
         }
 
-        $location = !empty($location) ? $location : AppHelper::instance()->realIP();
+        if (empty($location)) {
+            $ip = AppHelper::instance()->IPInfo();
+            if (empty($ip['country'])) return response()->json(['status' => false, 'result' => ['error' => 'Location not found']]);
+            $location = @$ip["country"];
+            if (!empty(@$ip['state'])) $location .= " " . $ip["state"];
+        }
+
         $locationName = ucwords(str_replace("\n", "" ,file_get_contents("https://wttr.in/$location?format=%l")));
-        if (strstr($locationName, "Unknow location") || $locationName == "not found") return response()->json(['status' => false, 'result' => ['error' => "Location not found ($location)"]]);
+        if ($locationName == "Not Found" || strstr($locationName, "Unknow location")) return response()->json(['status' => false, 'result' => ['error' => "Location not found ($location)"]]);
         $weather = str_replace("\n", "", file_get_contents("http://wttr.in/$location?format=%c+%t"));
 
         return response()->json(['status' => true, 'result' => ['location' => $locationName, 'weather' => $weather]]);
