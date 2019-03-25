@@ -9,9 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class MainController extends Controller {
-    public function date() {
+    public function init() {
+        $IP = AppHelper::instance()->realIP();
         $date = Jdate::instance()->jdate("Y/m/d", null, null, null, 'en');
-        return response()->json(['status' => true, 'result' => ['date' => $date]]);
+
+        return response()->json(['status' => true, 'result' => ['ip' => $IP, 'date' => $date]]);
     }
 
     public function dollar() {
@@ -23,7 +25,7 @@ class MainController extends Controller {
         $result = curl_exec($ch);
         curl_close($ch);
         $dom = new DOMDocument();
-        $dom->loadHTML($result);
+        @$dom->loadHTML($result);
         $dollar = $dom->getElementById('usd1_top')->textContent;
 
         return response()->json(['status' => true, 'result' => ['dollar' => $dollar]]);
@@ -287,8 +289,8 @@ class MainController extends Controller {
         }
 
         $location = !empty($location) ? $location : AppHelper::instance()->realIP();
-        $locationName = str_replace("\n", "" ,file_get_contents("https://wttr.in/$location?format=%l"));
-        if (strstr($locationName, "Unknow location") || $locationName == "not found") return response()->json(['status' => false, 'result' => ['error' => 'Location not found']]);
+        $locationName = ucwords(str_replace("\n", "" ,file_get_contents("https://wttr.in/$location?format=%l")));
+        if (strstr($locationName, "Unknow location") || $locationName == "not found") return response()->json(['status' => false, 'result' => ['error' => "Location not found ($location)"]]);
         $weather = str_replace("\n", "", file_get_contents("http://wttr.in/$location?format=%c+%t"));
 
         return response()->json(['status' => true, 'result' => ['location' => $locationName, 'weather' => $weather]]);

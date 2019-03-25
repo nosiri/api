@@ -20,6 +20,7 @@ $router->group(['middleware' => ['auth']], function () use ($router) {
 //        $router->get('signup', 'UserController@signup');
 //        $router->get('signin', 'UserController@signin');
 //    });
+    $router->get('init', 'MainController@init');
 
     $router->get('date', 'MainController@date');
 
