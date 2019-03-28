@@ -20,7 +20,7 @@ class HeadersMiddleware {
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With'
         ];
 
-        if ($request->isMethod('OPTIONS')) return response()->json(['status' => true, 'result' => ['method' => 'options']], 200, $headers);
+        if ($request->isMethod('OPTIONS')) return response()->json(['status' => true], 200, $headers);
 
         $response = $next($request);
         foreach ($headers as $key => $value) {
