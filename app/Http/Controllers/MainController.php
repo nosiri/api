@@ -128,7 +128,7 @@ class MainController extends Controller {
         else {
             $packages = [];
             for ($i = 0; $i < count($search->results); $i++) {
-                $package = $search->results[$i]->package;
+                $package = $search->results[$i];
 
                 $packages[] = [
                     'title' => $package->name,
