@@ -12,7 +12,7 @@ class MainController extends Controller {
     public function init() {
         $IP = AppHelper::instance()->realIP();
         $date = Jdate::instance()->jdate("Y/n/j", null, null, null, 'en');
-        $dollar = $this->dollar();
+        $dollar = $this->dollar()->original->result->dollar;
 
         return response()->json(['status' => true, 'result' => ['ip' => $IP, 'date' => $date, 'dollar' => $dollar]]);
     }
