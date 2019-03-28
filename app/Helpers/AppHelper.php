@@ -48,7 +48,7 @@ class AppHelper {
                 if ($res[$i] > 9) $res[$i] -= 9;
             }
         }
-        return array_sum($res) % 10 == 0? true : false;
+        return array_sum($res) % 10 == 0 ? true : false;
     }
 
     public function realIP() {

@@ -222,7 +222,9 @@ class MainController extends Controller {
         $result = json_decode(curl_exec($ch))->word;
         curl_close($ch);
 
-        return response()->json(['status' => true, 'result' => [$result]]);
+        $result->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\n", $result->text)));
+
+        return response()->json(['status' => true, 'result' => $result]);
     }
 
     public function omen(Request $request) {
