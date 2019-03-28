@@ -11,7 +11,7 @@
 |
 */
 
-$router->group(['middleware' => ['auth']], function () use ($router) {
+$router->group(['middleware' => ['auth', 'headers']], function () use ($router) {
     $router->get('/', function () use ($router) {
         return response()->json(['status' => true, 'result' => ['version' => env('APP_VERSION')]]);
     });
