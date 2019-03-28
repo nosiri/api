@@ -9,12 +9,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class MainController extends Controller {
-    public function init() {
+    public function init(Request $request) {
         $IP = AppHelper::instance()->realIP();
         $date = Jdate::instance()->jdate("Y/n/j", null, null, null, 'en');
         $dollar = $this->dollar()->original["result"]["dollar"];
+        $weather = $this->weather($request)->original;
 
-        return response()->json(['status' => true, 'result' => ['ip' => $IP, 'date' => $date, 'dollar' => $dollar]]);
+        return response()->json(['status' => true, 'result' => ['ip' => $IP, 'date' => $date, 'dollar' => $dollar, 'weather' => $weather]]);
     }
 
     public function dollar() {
