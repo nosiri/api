@@ -22,11 +22,15 @@ class HeadersMiddleware {
 
         if ($request->isMethod('OPTIONS')) return response()->json(['status' => true], 200, $headers);
 
-        $response = $next($request);
+        $responseHeaders = [];
         foreach ($headers as $key => $value) {
-            $response->header($key, $value);
+            $responseHeaders[] = [$key => $value];
         }
 
-        return $response;
+        if (env('APP_HTTPS') && !$request->secure() && env('APP_ENV') == 'production') {
+            return redirect($request->getRequestUri(), 302, $responseHeaders, true);
+        }
+
+        return $next($request);
     }
 }
