@@ -67,8 +67,8 @@ class MainController extends Controller {
         $getAudio = json_decode(AppHelper::instance()->receiver($audio));
 
         if (!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
-            $error = 'Internal error when fetching audio source';
-            return AppHelper::instance()->failed($error, 503);
+            $error = 'Gateway error when fetching audio source';
+            return AppHelper::instance()->failed($error, 502);
         }
         else {
             $link = $getAudio->groups[0]->items[0]->link;
@@ -84,7 +84,7 @@ class MainController extends Controller {
         $video = trim($request->get('link'));
 
         $validator = Validator::make($request->all(), [
-            'link' => 'required|url'
+            'link' => ["required", "url", "regex:/http[s]?:\/\/(?:(?:m\.)|(?:www\.))?(?:youtube.com|youtu.be)\/.*/"]
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
@@ -93,14 +93,19 @@ class MainController extends Controller {
 
         $getVideo = json_decode(AppHelper::instance()->receiver($video, true));
 
-        if (!in_array($getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0) {
-            $error = 'Internal error when fetching video source';
-            return AppHelper::instance()->failed($error, 400);
+        if (!in_array(@$getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0) {
+            $error = 'Gateway error when fetching video source';
+            return AppHelper::instance()->failed($error, 502);
         }
         else {
             $getVideo = $getVideo->groups[0]->items[0];
             $title = $getVideo->title;
             $link = $getVideo->link;
+
+            if ($title == " " || substr($link, -5) == "_.mp4") {
+                $error = 'Censored video';
+                return AppHelper::instance()->failed($error, 403);
+            }
 
             $result = [
                 'title' => $title,
