@@ -281,9 +281,9 @@ class MainController extends Controller {
         $response = json_decode(curl_exec($ch));
         curl_close($ch);
 
-        if (!$response->response->status) {
-            $error = 'Gateway Error';
-            return AppHelper::instance()->failed($error, 502);
+        if (@!$response->response->status) {
+            $error = 'Not found';
+            return AppHelper::instance()->failed($error, 400);
         }
 
         $response->word->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $response->word->text)));
