@@ -12,6 +12,8 @@
 */
 
 $router->group(['middleware' => ['auth', 'headers']], function () use ($router) {
+    $router->get('test', 'MainController@test');
+
     $router->get('/', function () use ($router) {
         $result = [
             'version' => env('APP_VERSION')

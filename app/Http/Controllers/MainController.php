@@ -259,8 +259,7 @@ class MainController extends Controller {
 
     public function dictionary(Request $request) {
         $query = trim($request->get('query'));
-        $vajehYab = env('VAJEHYAB_TOKEN');
-        $vajehYabSource = env('VAJEHYAB_SOURCE');
+        $source = env('VAJEHYAB_SOURCE');
 
         $validator = Validator::make($request->all(), [
             'query' => 'required|max:12|regex:/[ا-ی]/'
@@ -270,32 +269,32 @@ class MainController extends Controller {
             return AppHelper::instance()->failed($error, 400);
         }
 
+        $query = urlencode($query);
+        $time = (int)round(microtime(true) * 1000);
+
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "http://api.vajehyab.com/v3/word?token=$vajehYab&title=$query&db=$vajehYabSource&num=1");
+        curl_setopt($ch, CURLOPT_URL, "http://www.vajehyab.com/$source/$query?_=$time");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-vy-ajax: true']);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        $result = json_decode(curl_exec($ch));
+        $response = json_decode(curl_exec($ch));
         curl_close($ch);
 
-        if ($result->response->code != 200) {
-            $errorCode = $result->response->code;
-            $error = "Gateway Error ($errorCode)";
-            if (env('APP_DEBUG')) {
-                $errorMessage = $result->debug->message;
-                $error .= "\n $errorMessage";
-            }
-
+        if (!$response->response->status) {
+            $error = 'Gateway Error';
             return AppHelper::instance()->failed($error, 502);
         }
-        else $result = $result->word;
 
-        $result->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\n", $result->text)));
+        $response->word->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $response->word->text)));
 
-        unset($result->title_en);
-        unset($result->id);
-        unset($result->title);
-        unset($result->db);
+        $result = [];
+
+        foreach ($response->info as $item) {
+            $result[$item->name] = $item->text;
+        }
+        $result["database"] = $response->word->source;
+        $result["text"] = $response->word->text;
 
         return AppHelper::instance()->success($result);
     }
