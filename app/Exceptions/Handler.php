@@ -47,7 +47,7 @@ class Handler extends ExceptionHandler
     public function render($request, Exception $exception) {
         //Custom 404 error
         if ($exception instanceof NotFoundHttpException) {
-            return response()->json(['status' => false, 'result' => ['error' => 'Method not found']]);
+            return response()->json(['ok' => false, 'result' => ['error' => 'Method not found']]);
         }
         return parent::render($request, $exception);
     }
