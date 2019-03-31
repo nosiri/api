@@ -67,7 +67,7 @@ class MainController extends Controller {
         $getAudio = json_decode(AppHelper::instance()->receiver($audio));
 
         if (!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
-            $error = 'Gateway error when fetching audio source';
+            $error = 'Gateway error';
             return AppHelper::instance()->failed($error, 502);
         }
         else {
@@ -94,7 +94,7 @@ class MainController extends Controller {
         $getVideo = json_decode(AppHelper::instance()->receiver($video, true));
 
         if (!in_array(@$getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0) {
-            $error = 'Gateway error when fetching video source';
+            $error = 'Gateway error';
             return AppHelper::instance()->failed($error, 502);
         }
         else {
@@ -263,7 +263,7 @@ class MainController extends Controller {
         $vajehYabSource = env('VAJEHYAB_SOURCE');
 
         $validator = Validator::make($request->all(), [
-            'query' => 'required|max:12'
+            'query' => 'required|max:12|regex:/[ا-ی]/'
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
@@ -275,10 +275,27 @@ class MainController extends Controller {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        $result = json_decode(curl_exec($ch))->word;
+        $result = json_decode(curl_exec($ch));
         curl_close($ch);
 
+        if ($result->response->code != 200) {
+            $errorCode = $result->response->code;
+            $error = "Gateway Error ($errorCode)";
+            if (env('APP_DEBUG')) {
+                $errorMessage = $result->debug->message;
+                $error .= "\n $errorMessage";
+            }
+
+            return AppHelper::instance()->failed($error, 502);
+        }
+        else $result = $result->word;
+
         $result->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\n", $result->text)));
+
+        unset($result->title_en);
+        unset($result->id);
+        unset($result->title);
+        unset($result->db);
 
         return AppHelper::instance()->success($result);
     }
@@ -404,7 +421,7 @@ class MainController extends Controller {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://dnsdumpster.com/");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, "targetip=$domain&csrfmiddlewaretoken=MKVFCoUkX4PO3mlx7YdMPVGPQPxxzNus");
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
