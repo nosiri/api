@@ -13,7 +13,10 @@
 
 $router->group(['middleware' => ['auth', 'headers']], function () use ($router) {
     $router->get('/', function () use ($router) {
-        return response()->json(['status' => true, 'result' => ['version' => env('APP_VERSION')]]);
+        $result = [
+            'version' => env('APP_VERSION')
+        ];
+        return \App\Helpers\AppHelper::instance()->success($result);
     });
 
 //    $router->group(['prefix' => 'user'], function () use ($router) {

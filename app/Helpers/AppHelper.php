@@ -124,6 +124,14 @@ class AppHelper {
         return $output;
     }
 
+    public function success($result) {
+        return response()->json(['ok' => true, 'result' => $result]);
+    }
+
+    public function failed($error, $code) {
+        return response()->json(['ok' => false, 'error' => $error], $code);
+    }
+    
     public static function instance() {
         return new AppHelper();
     }
