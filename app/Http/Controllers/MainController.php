@@ -57,7 +57,7 @@ class MainController extends Controller {
         $audio = trim($request->get('link'));
 
         $validator = Validator::make($request->all(), [
-            'link' => 'required|url|regex:/soundcloud.com\/.*/i'
+            'link' => ['required', 'url', 'regex:/^https?:\/\/((www|m)\.)?soundcloud\.com\/.+/i']
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
@@ -66,7 +66,7 @@ class MainController extends Controller {
 
         $getAudio = json_decode(AppHelper::instance()->receiver($audio));
 
-        if (!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
+        if (@!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
             $error = 'Gateway error';
             return AppHelper::instance()->failed($error, 502);
         }
