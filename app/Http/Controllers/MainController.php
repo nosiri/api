@@ -12,7 +12,7 @@ class MainController extends Controller {
     public function init(Request $request) {
         $IP = AppHelper::instance()->realIP();
         $date = Jdate::instance()->jdate("Y/n/j", null, null, null, 'en');
-        $dollar = $this->dollar()->original["result"]["dollar"];
+        $dollar = $this->currency()->original["result"]["dollar"];
         $weather = $this->weather($request)->original;
 
         $result = [
@@ -24,20 +24,34 @@ class MainController extends Controller {
         return AppHelper::instance()->success($result);
     }
 
-    public function dollar() {
+    public function currency() {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        $result = curl_exec($ch);
+        curl_setopt($ch, CURLOPT_PROXY, "127.0.0.1:9050");
+        curl_setopt($ch, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+        $response = curl_exec($ch);
         curl_close($ch);
+
         $dom = new DOMDocument();
-        @$dom->loadHTML($result);
+        @$dom->loadHTML($response);
+
+        $lastUpdate = Jdate::instance()->jdate("Y/n/j G:i:s", strtotime($dom->getElementById('last_modified')->textContent), null, null, 'en');
         $dollar = (int)$dom->getElementById('usd1_top')->textContent;
+        $euro = (int)$dom->getElementById('eur1_top')->textContent;
+        $gold = (int)$dom->getElementById('gol18')->textContent;
+        $bitcoin = (int)$dom->getElementById('bitcoin')->textContent * $dollar;
+        $emamiCoin = (int)$dom->getElementById('emami1_top')->textContent;
 
         $result = [
-            'dollar' => $dollar
+            'last_update' => $lastUpdate,
+            'dollar' => $dollar,
+            'euro' => $euro,
+            'gold' => $gold,
+            'bitcoin' => $bitcoin,
+            'emami_coin' => $emamiCoin
         ];
         return AppHelper::instance()->success($result);
     }

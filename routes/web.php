@@ -12,7 +12,7 @@
 */
 
 $router->group(['middleware' => ['auth', 'headers']], function () use ($router) {
-    $router->get('/', function () use ($router) {
+    $router->get('/', function () {
         $result = [
             'version' => env('APP_VERSION')
         ];
@@ -28,7 +28,7 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->get('date', 'MainController@date');
 
-    $router->get('dollar', 'MainController@dollar');
+    $router->get('currency', 'MainController@currency');
 
     $router->get('proxy', 'MainController@proxy');
 
