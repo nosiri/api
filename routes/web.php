@@ -52,8 +52,6 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->get('weather', 'MainController@weather');
 
-    $router->get('dns', 'MainController@dns');
-
     $router->get('nassaab', 'MainController@nassaab');
 
     $router->group(['prefix' => 'filimo'], function () use ($router) {

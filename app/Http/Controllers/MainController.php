@@ -415,45 +415,6 @@ class MainController extends Controller {
         return AppHelper::instance()->success($result);
     }
 
-    public function dns(Request $request) {
-        $domain = trim($request->get('domain'));
-
-        $validator = Validator::make($request->all(), [
-            'domain' => 'required|url'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
-        }
-
-        $domain = trim(str_replace(["https","http","://","/"], "", $domain));
-        if (substr($domain, 0, 4) == "www.") $domain = substr($domain, 4);
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://dnsdumpster.com/");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, "targetip=$domain&csrfmiddlewaretoken=MKVFCoUkX4PO3mlx7YdMPVGPQPxxzNus");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        curl_exec($ch);
-        curl_close($ch);
-
-        $url = "https://dnsdumpster.com/static/map/$domain.png";
-        if (!@file_get_contents($url)) {
-            $error = 'The domain is invalid';
-            return AppHelper::instance()->failed($error, 400);
-        }
-        else {
-            $result = [
-                'domain' => $domain,
-                'dns' => $url
-            ];
-            return AppHelper::instance()->success($result);
-        }
-    }
-
     public function nassaab(Request $request) {
         $item = trim($request->get('item'));
 
