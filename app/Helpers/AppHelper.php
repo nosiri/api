@@ -3,17 +3,19 @@ namespace App\Helpers;
 
 class AppHelper {
     public function nassaab($action, $id, $email = "sahmmadh@gmail.com") {
+        $version = "3.16";
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://handle.ahmadhashemi.com/nassaab/special/$action.php");
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Nassaab/1 CFNetwork/897.15 Darwin/17.5.0');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Nassaab/1 CFNetwork/975.0.3 Darwin/18.2.0');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, "email=$email&id=$id");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "email=$email&id=$id&version=$version");
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        $result = curl_exec($ch);
+        $response = curl_exec($ch);
         curl_close($ch);
 
-        return $result;
+        return $response;
     }
 
     public function receiver($link, $isNoFilter = 0) {
