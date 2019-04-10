@@ -56,12 +56,12 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->group(['prefix' => 'filimo'], function () use ($router) {
         $router->get('search', 'FilimoController@search');
-        $router->get('get', 'FilimoController@fetch');
+        $router->get('movie', 'FilimoController@get');
         $router->get('user', 'FilimoController@finder');
     });
 
     $router->group(['prefix' => 'namava'], function () use ($router) {
         $router->get('search', 'NamavaController@search');
-        $router->get('get', 'NamavaController@fetch');
+        $router->get('movie', 'NamavaController@get');
     });
 });
