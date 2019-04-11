@@ -67,7 +67,11 @@ class NamavaController extends Controller {
         else {
             $title = $response->Name;
             $image = $response->ImageAbsoluteUrl;
-            $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />", "درباره فیلم:\r\n"], "\r\n", $response->FullDescription))));
+
+            $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $response->FullDescription))));
+            preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $description);
+            $description = $description[0][0];
+
             $year = null;
             $duration = null;
             $rate = null;
