@@ -59,7 +59,7 @@ $app->singleton(
 
  $app->routeMiddleware([
      'auth' => App\Http\Middleware\Authenticate::class,
-     'headers' => App\Http\Middleware\HeadersMiddleware::class,
+     'headers' => App\Http\Middleware\Headers::class,
  ]);
 
 /*
@@ -75,6 +75,7 @@ $app->singleton(
 
 // $app->register(App\Providers\AppServiceProvider::class);
  $app->register(App\Providers\AuthServiceProvider::class);
+ $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
  $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 

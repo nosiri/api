@@ -3,7 +3,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 
-class HeadersMiddleware {
+class Headers {
     /**
      * Handle an incoming request.
      *
@@ -13,7 +13,7 @@ class HeadersMiddleware {
      */
     public function handle($request, Closure $next) {
         $headers = [
-            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Origin' => env('APP_ORIGIN'),
             'Access-Control-Allow-Methods' => 'POST, GET, OPTIONS',
             'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Max-Age' => '86400',
