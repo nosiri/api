@@ -22,15 +22,16 @@ class Headers {
 
         if ($request->isMethod('OPTIONS')) return response()->json(['ok' => true], 200, $headers);
 
+        $response = $next($request);
         $responseHeaders = [];
         foreach ($headers as $key => $value) {
-            $responseHeaders[] = [$key => $value];
+            $responseHeaders[$key] = $value;
+            $response->header($key, $value);
         }
 
-        if (env('APP_HTTPS') && !$request->secure() && env('APP_ENV') == 'production') {
+        if (env('APP_ENV') == 'production' && env('APP_HTTPS') && !$request->secure()) {
             return redirect($request->getRequestUri(), 302, $responseHeaders, true);
         }
-
-        return $next($request);
+        else return $response;
     }
 }
