@@ -30,18 +30,31 @@ class MainController extends Controller {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        $response = curl_exec($ch);
+        $html = curl_exec($ch);
         curl_close($ch);
 
         $dom = new DOMDocument();
-        @$dom->loadHTML($response);
-
+        @$dom->loadHTML($html);
+        $hash = $dom->getElementById("hash")->textContent;
         $lastUpdate = Jdate::instance()->jdate("Y/n/j G:i:s", strtotime($dom->getElementById('last_modified')->textContent), null, null, 'en');
-        $dollar = (int)$dom->getElementById('usd1_top')->textContent;
-        $euro = (int)$dom->getElementById('eur1_top')->textContent;
-        $gold = (int)$dom->getElementById('gol18')->textContent;
-        $bitcoin = (int)$dom->getElementById('bitcoin')->textContent * $dollar;
-        $emamiCoin = (int)$dom->getElementById('emami1_top')->textContent;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/json');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+        curl_setopt($ch, CURLOPT_REFERER, 'https://bonbast.com/');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "hash=$hash");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Requested-With: XMLHttpRequest']);
+        $response = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+        $dollar = (int)$response->usd1;
+        $euro = (int)$response->eur1;
+        $gold = (int)$response->gol18;
+        $bitcoin = (int)$response->bitcoin * $dollar;
+        $emamiCoin = (int)$response->emami1;
 
         $result = [
             'last_update' => $lastUpdate,
