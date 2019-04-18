@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\AppHelper;
+use App\Helpers\AppHelper as Helper;
 use App\Helpers\Jdate;
 use DOMDocument;
 use Illuminate\Http\Request;
@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Validator;
 
 class MainController extends Controller {
     public function init(Request $request) {
-        $IP = AppHelper::instance()->realIP();
-        $date = Jdate::instance()->jdate("Y/n/j", null, null, null, 'en');
+        $Jdate = Jdate::instance();
+        $IP = Helper::realIP();
+        $date = $Jdate->jdate("Y/n/j", null, null, null, 'en');
         $dollar = $this->currency()->original["result"]["dollar"];
         $weather = $this->weather($request)->original;
 
@@ -21,10 +22,31 @@ class MainController extends Controller {
             'dollar' => $dollar,
             'weather' => $weather
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
+    }
+
+    public function status() {
+        $result = [];
+
+        $result["ahmadhashemi"] = Helper::ping("handle.ahmadhashemi.com");
+        $result["receiver"] = Helper::ping("receiverdl.com");
+        $result["filimo"] = Helper::ping("filimo.com");
+        $result["namava"] = Helper::ping("namava.ir");
+        $result["soundcloud"] = Helper::ping("soundcloud.com");
+        $result["youtube"] = Helper::ping("youtube.com");
+        $result["bonbast"] = Helper::ping("bonbast.com");
+        $result["weather"] = Helper::ping("wttr.in");
+        $result["vajehyab"] = Helper::ping("vajehyab.com");
+        $result["emamsadegh"] = Helper::ping("iandish.ir");
+        $result["npm"] = Helper::ping("npms.io");
+        $result["packagist"] = Helper::ping("packagist.org");
+
+        return Helper::success($result);
     }
 
     public function currency() {
+        $Jdate = Jdate::instance();
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -36,7 +58,7 @@ class MainController extends Controller {
         $dom = new DOMDocument();
         @$dom->loadHTML($html);
         $hash = $dom->getElementById("hash")->textContent;
-        $lastUpdate = Jdate::instance()->jdate("Y/n/j G:i:s", strtotime($dom->getElementById('last_modified')->textContent), null, null, 'en');
+        $lastUpdate = $Jdate->jdate("Y/n/j G:i:s", strtotime($dom->getElementById('last_modified')->textContent), null, null, 'en');
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/json');
@@ -64,18 +86,18 @@ class MainController extends Controller {
             'bitcoin' => $bitcoin,
             'emami_coin' => $emamiCoin
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function proxy() {
-        $lastUpdate = json_decode(AppHelper::instance()->nassaab("info", "HFmHiMLkQI"), true)["info"][3]["subtitle"];
-        $proxy = AppHelper::instance()->nassaab("install", "HFmHiMLkQI");
+        $lastUpdate = json_decode(Helper::nassaab("info", "HFmHiMLkQI"), true)["info"][3]["subtitle"];
+        $proxy = Helper::nassaab("install", "HFmHiMLkQI");
 
         $result = [
             'proxy' => $proxy,
             'last_update' => $lastUpdate
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function soundcloud(Request $request) {
@@ -86,14 +108,14 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
-        $getAudio = json_decode(AppHelper::instance()->receiver($audio));
+        $getAudio = json_decode(Helper::receiver($audio));
 
         if (@!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
             $error = 'Gateway error';
-            return AppHelper::instance()->failed($error, 502);
+            return Helper::failed($error, 502);
         }
         else {
             $link = $getAudio->groups[0]->items[0]->link;
@@ -101,7 +123,7 @@ class MainController extends Controller {
             $result = [
                 'link' => $link
             ];
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -113,14 +135,14 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
-        $getVideo = json_decode(AppHelper::instance()->receiver($video, true));
+        $getVideo = json_decode(Helper::receiver($video, true));
 
         if (!in_array(@$getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0) {
             $error = 'Gateway error';
-            return AppHelper::instance()->failed($error, 502);
+            return Helper::failed($error, 502);
         }
         else {
             $getVideo = $getVideo->groups[0]->items[0];
@@ -129,14 +151,14 @@ class MainController extends Controller {
 
             if ($title == " " || substr($link, -5) == "_.mp4") {
                 $error = 'Censored video';
-                return AppHelper::instance()->failed($error, 403);
+                return Helper::failed($error, 403);
             }
 
             $result = [
                 'title' => $title,
                 'link' => $link
             ];
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -148,13 +170,13 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $search = json_decode(file_get_contents("https://api.npms.io/v2/search?q=$query&size=25&from=0"));
         if (!$search->total) {
             $error = 'Not found';
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
         else {
             $packages = [];
@@ -170,7 +192,7 @@ class MainController extends Controller {
             $result = [
                 'packages' => $packages
             ];
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -182,13 +204,13 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $search = json_decode(file_get_contents("https://packagist.org/search.json?q=$query&per_page=25&page=1"));
         if (!$search->total) {
             $error = 'Not found';
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
         else {
             $packages = [];
@@ -204,7 +226,7 @@ class MainController extends Controller {
             $result = [
                 'packages' => $packages
             ];
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -216,7 +238,7 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $email = md5($email);
@@ -225,18 +247,18 @@ class MainController extends Controller {
         $result = [
             'url' => $url
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function bankDetector(Request $request) {
-        $card = AppHelper::instance()->convert(trim($request->get('card')));
+        $card = Helper::convert(trim($request->get('card')));
 
         $validator = Validator::make($request->all(), [
             'card' => 'required|size:16'
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $banks = [
@@ -266,20 +288,20 @@ class MainController extends Controller {
             '639370' => "مهر اقتصاد"
         ];
 
-        $isValid = AppHelper::instance()->bankCardCheck($card);
+        $isValid = Helper::bankCardCheck($card);
         $card = substr($card, 0, 6);
 
         if (!empty($banks[$card])) $bank = $banks[$card];
         else {
             $error = 'Card number is not valid';
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $result = [
             'bank' => $bank,
             'valid' => $isValid
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function dictionary(Request $request) {
@@ -291,7 +313,7 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $query = urlencode($query);
@@ -308,7 +330,7 @@ class MainController extends Controller {
 
         if (@!$response->response->status) {
             $error = 'Not found';
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $response->word->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $response->word->text)));
@@ -321,7 +343,7 @@ class MainController extends Controller {
         $result["database"] = $response->word->source;
         $result["text"] = $response->word->text;
 
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function omen(Request $request) {
@@ -332,7 +354,7 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $omenId = !empty($id) ? (int)$id : rand(1, 159);
@@ -342,7 +364,7 @@ class MainController extends Controller {
             'id' => $omenId,
             'url' => $omenURL
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function emamsadegh(Request $request) {
@@ -353,7 +375,7 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $source = "https://iandish.ir/web/list?qs=$name&src=1";
@@ -383,13 +405,13 @@ class MainController extends Controller {
 
         if (!count($result)) {
             $error = 'Not found';
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
         else {
             $result = [
                 'users' => $result
             ];
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -401,14 +423,14 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         if (empty($location)) {
-            $ip = AppHelper::instance()->IPInfo();
+            $ip = Helper::instance()->IPInfo();
             if (empty($ip['country'])) {
                 $error = 'Not found';
-                return AppHelper::instance()->failed($error, 400);
+                return Helper::failed($error, 400);
             }
             $location = @$ip["country"];
             if (!empty(@$ip['state'])) $location .= " " . $ip["state"];
@@ -417,7 +439,7 @@ class MainController extends Controller {
         $locationName = ucwords(str_replace("\n", "" , file_get_contents("https://wttr.in/$location?format=%l")));
         if ($locationName == "Not Found" || strstr($locationName, "Unknow location")) {
             $error = 'Not found (' . $location . ')';
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
         $weather = str_replace("\n", "", file_get_contents("http://wttr.in/$location?format=%c+%t"));
 
@@ -425,7 +447,7 @@ class MainController extends Controller {
             'location' => $locationName,
             'weather' => $weather
         ];
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 
     public function nassaab(Request $request) {
@@ -436,8 +458,10 @@ class MainController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
-
+        else {
+            return Helper::success("soon");
+        }
     }
 }

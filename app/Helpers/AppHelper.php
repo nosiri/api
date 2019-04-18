@@ -2,7 +2,7 @@
 namespace App\Helpers;
 
 class AppHelper {
-    public function nassaab($action, $id, $email = "sahmmadh@gmail.com") {
+    public static function nassaab($action, $id, $email = "sahmmadh@gmail.com") {
         $version = "3.16";
 
         $ch = curl_init();
@@ -18,7 +18,7 @@ class AppHelper {
         return $response;
     }
 
-    public function receiver($link, $isNoFilter = 0) {
+    public static function receiver($link, $isNoFilter = 0) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://receiverdl.com/api/extract/action.php?link=$link&isNoFilter=$isNoFilter");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -29,7 +29,7 @@ class AppHelper {
         return $result;
     }
 
-    function convert($string) {
+    public static function convert($string) {
         $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
         $arabic = ['٩', '٨', '٧', '٦', '٥', '٤', '٣', '٢', '١','٠'];
 
@@ -40,7 +40,7 @@ class AppHelper {
         return $englishNumbersOnly;
     }
 
-    function bankCardCheck($card) {
+    public static function bankCardCheck($card) {
         $card = (string) preg_replace('/\D/', '', $card);
         $length = strlen($card);
         if ($length != 16) return false;
@@ -57,7 +57,7 @@ class AppHelper {
         return array_sum($res) % 10 == 0 ? true : false;
     }
 
-    public function realIP() {
+    public static function realIP() {
         $IP = null;
         if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
             $_SERVER['REMOTE_ADDR'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
@@ -74,7 +74,7 @@ class AppHelper {
         return $IP;
     }
 
-    function IPInfo($IP = null, $purpose = "location") {
+    public function IPInfo($IP = null, $purpose = "location") {
         $output = null;
         if (empty($IP)) $IP = $this->realIP();
         if (!filter_var($IP, FILTER_VALIDATE_IP)) return false;
@@ -130,7 +130,22 @@ class AppHelper {
         return $output;
     }
 
-    function filimo($text, $type) {
+    public static function ping($domain) {
+        $startTime = microtime(true);
+        $file = @fsockopen($domain, 80, $errno, $errstr, 3);
+        $stopTime = microtime(true);
+        $status = 0;
+
+        if (!$file) $status = null;
+        else {
+            fclose($file);
+            $status = ($stopTime - $startTime) * 1000;
+            $status = floor($status);
+        }
+        return $status;
+    }
+
+    public static function filimo($text, $type) {
         $user = env('FILIMO_USER');
         $token = env('FILIMO_TOKEN');
         $query = ($type == "search") ? "text" : "uid";
@@ -145,11 +160,11 @@ class AppHelper {
         return $response;
     }
 
-    public function success($result) {
+    public static function success($result) {
         return response()->json(['ok' => true, 'result' => $result]);
     }
 
-    public function failed($error, $code) {
+    public static function failed($error, $code) {
         return response()->json(['ok' => false, 'error' => $error], $code);
     }
     

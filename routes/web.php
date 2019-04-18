@@ -26,6 +26,8 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->get('init', 'MainController@init');
 
+    $router->get('status', 'MainController@status');
+
     $router->get('date', 'MainController@date');
 
     $router->get('currency', 'MainController@currency');
