@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\AppHelper;
+use App\Helpers\AppHelper as Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,7 +15,7 @@ class NamavaController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $query = urlencode($query);
@@ -30,7 +30,7 @@ class NamavaController extends Controller {
         $response = json_decode(curl_exec($ch));
         curl_close($ch);
 
-        if (!count($response)) return AppHelper::instance()->failed("Not found", 400);
+        if (!count($response)) return Helper::failed("Not found", 400);
         else {
             $result = [];
             for ($i = 0; $i < count($response); $i++) {
@@ -42,7 +42,7 @@ class NamavaController extends Controller {
                 ];
             }
 
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -54,7 +54,7 @@ class NamavaController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $ch = curl_init();
@@ -63,7 +63,7 @@ class NamavaController extends Controller {
         $response = @json_decode(curl_exec($ch));
         curl_close($ch);
 
-        if ($id != @$response->PostId || !in_array($response->PostTypeSlug, ["movie", "episode"])) return AppHelper::instance()->failed("Incorrect ID", 400);
+        if ($id != @$response->PostId || !in_array($response->PostTypeSlug, ["movie", "episode"])) return Helper::failed("Incorrect ID", 400);
         else {
             $title = $response->Name;
             $image = $response->ImageAbsoluteUrl;
@@ -106,8 +106,8 @@ class NamavaController extends Controller {
                 'link' => $link
             ];
 
-            if (!empty($link)) return AppHelper::instance()->success($result);
-            else return AppHelper::instance()->failed("Internal Error", 502);
+            if (!empty($link)) return Helper::success($result);
+            else return Helper::failed("Internal Error", 502);
         }
     }
 }

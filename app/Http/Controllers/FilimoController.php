@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\AppHelper;
+use App\Helpers\AppHelper as Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,14 +15,14 @@ class FilimoController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $query = urlencode($query);
 
-        $response = AppHelper::instance()->filimo($query, "search");
+        $response = Helper::filimo($query, "search");
 
-        if (!count($response)) return AppHelper::instance()->failed("Not found", 400);
+        if (!count($response)) return Helper::failed("Not found", 400);
         else {
             $count = count($response) > 20 ? 20 : count($response);
             $result = [];
@@ -35,7 +35,7 @@ class FilimoController extends Controller {
                 ];
             }
 
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -47,12 +47,12 @@ class FilimoController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
-        $response = AppHelper::instance()->filimo($id, "movie");
+        $response = Helper::filimo($id, "movie");
 
-        if (@empty($response->uid) || @$response->uid != $id) return AppHelper::instance()->failed("Incorrect ID", 400);
+        if (@empty($response->uid) || @$response->uid != $id) return Helper::failed("Incorrect ID", 400);
         else {
             $title = $response->movie_title;
             $image = $response->movie_img_b;
@@ -84,7 +84,7 @@ class FilimoController extends Controller {
                 'link' => $link
             ];
 
-            return AppHelper::instance()->success($result);
+            return Helper::success($result);
         }
     }
 
@@ -99,7 +99,7 @@ class FilimoController extends Controller {
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return AppHelper::instance()->failed($error, 400);
+            return Helper::failed($error, 400);
         }
 
         $tv = "";
@@ -113,7 +113,7 @@ class FilimoController extends Controller {
         $response = curl_exec($ch);
 
         $tvCode = json_decode($response)->verifycodeget->code;
-        if (curl_errno($ch) || empty($tvCode)) return AppHelper::instance()->failed("Can't get TV Code", 502);
+        if (curl_errno($ch) || empty($tvCode)) return Helper::failed("Can't get TV Code", 502);
         curl_close($ch);
 
         #Get CSRF Token
@@ -133,7 +133,7 @@ class FilimoController extends Controller {
         $response = curl_exec($ch);
 
         $csrf = json_decode($response)->csrf->csrf_token;
-        if (curl_errno($ch) || empty($csrf)) return AppHelper::instance()->failed("Can't get CSRF Code", 502);
+        if (curl_errno($ch) || empty($csrf)) return Helper::failed("Can't get CSRF Code", 502);
         curl_close($ch);
 
 
@@ -157,7 +157,7 @@ class FilimoController extends Controller {
         $response = curl_exec($ch);
 
         $mobile[] = json_decode($response)->signinstep1new->mobile_valid;
-        if (curl_errno($ch) || empty($mobile[0])) return AppHelper::instance()->failed("Error when fetching Mobile first part", 502);
+        if (curl_errno($ch) || empty($mobile[0])) return Helper::failed("Error when fetching Mobile first part", 502);
         curl_close($ch);
 
         #Get temp_id
@@ -172,7 +172,7 @@ class FilimoController extends Controller {
         $response = curl_exec($ch);
 
         $tempID = json_decode($response)->data->attributes->temp_id;
-        if (curl_errno($ch) || empty($tempID)) return AppHelper::instance()->failed("Can't get Temp ID", 502);
+        if (curl_errno($ch) || empty($tempID)) return Helper::failed("Can't get Temp ID", 502);
         curl_close($ch);
 
         #Get mobile second part
@@ -186,7 +186,7 @@ class FilimoController extends Controller {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $response = curl_exec($ch);
         $mobile[] = json_decode($response)->data->attributes->mobile_valid;
-        if (curl_errno($ch) || empty($mobile[1])) return AppHelper::instance()->failed("Error when fetching Mobile second part", 502);
+        if (curl_errno($ch) || empty($mobile[1])) return Helper::failed("Error when fetching Mobile second part", 502);
         curl_close ($ch);
 
         #Parse Number
@@ -202,6 +202,6 @@ class FilimoController extends Controller {
             'temp_id' => $tempID,
         ];
 
-        return AppHelper::instance()->success($result);
+        return Helper::success($result);
     }
 }

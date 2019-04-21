@@ -16,7 +16,7 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
         $result = [
             'version' => env('APP_VERSION')
         ];
-        return \App\Helpers\AppHelper::instance()->success($result);
+        return \App\Helpers\AppHelper::success($result);
     });
 
 //    $router->group(['prefix' => 'user'], function () use ($router) {
