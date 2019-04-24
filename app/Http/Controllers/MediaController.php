@@ -86,23 +86,16 @@ class MediaController extends Controller {
     public function search(Request $request) {
         $query = $request->get('query');
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'query' => 'required'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $query = urlencode($query);
 
         $namava = $this->namava($query, "search");
         $filimo = $this->filimo($query, "search");
 
-        if (!$filimo && !$namava) {
-            $error = "Not found";
-            return Helper::failed($error, 400);
-        }
+        if (!$filimo && !$namava) return Helper::failed("Not found", 400);
 
         $movies = [];
         $result = [];
@@ -155,32 +148,23 @@ class MediaController extends Controller {
             }
         }
 
-        if (empty($result)) {
-            $error = "Not found";
-            return Helper::failed($error, 400);
-        }
+        if (empty($result)) return Helper::failed("Not found", 400);
         else return Helper::success($result);
     }
 
     public function get(Request $request) {
         $id = trim($request->get('id'));
-        $service = trim($request->get('service'));
+        $result = false;
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'id' => 'required',
-            'service' => 'required|in:filimo,namava',
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
-        if ($service == "filimo") {
-            if (strlen($id) != 5) return Helper::failed("Filimo ID isn't correct", 400);
-
+        if (!is_numeric($id) && strlen($id) == 5) {
             $movie = $this->filimo($id, "movie");
 
-            if (@empty($movie->uid) || @$movie->uid != $id) return Helper::failed("Incorrect ID", 400);
+            if (@empty($movie->uid) || @$movie->uid != $id)
+                return Helper::failed("Filimo incorrect id", 400);
             else {
                 $title = $movie->movie_title;
                 $image = $movie->movie_img_b;
@@ -213,12 +197,11 @@ class MediaController extends Controller {
                 ];
             }
         }
-        else if ($service == "namava") {
-            if (!is_numeric($id)) return Helper::failed("Namava ID isn't correct", 400);
-
+        else if (is_numeric($id)) {
             $movie = $this->namava($id, "movie");
 
-            if ($id != @$movie->PostId || !in_array($movie->PostTypeSlug, ["movie", "episode"])) return Helper::failed("Incorrect ID", 400);
+            if ($id != @$movie->PostId || !in_array($movie->PostTypeSlug, ["movie", "episode"]))
+                return Helper::failed("Namava incorrect id", 400);
             else {
                 $title = $movie->Name;
                 $image = $movie->ImageAbsoluteUrl;
@@ -247,10 +230,10 @@ class MediaController extends Controller {
                 curl_setopt($ch, CURLOPT_POST, 1);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, "id=$id");
                 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-                $link = @json_decode(curl_exec($ch))->link;
+                $m3u8 = @json_decode(curl_exec($ch))->link;
                 curl_close($ch);
 
-                if (empty($link)) $result = false;
+                if (empty($m3u8)) $result = false;
                 else {
                     $result = [
                         'title' => $title,
@@ -260,7 +243,7 @@ class MediaController extends Controller {
                         'duration' => $duration,
                         'genres' => $genres,
                         'rate' => $rate,
-                        'link' => $link
+                        'link' => $m3u8
                     ];
                 }
             }

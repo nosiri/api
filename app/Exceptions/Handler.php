@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Helpers\AppHelper as Helper;
 use Exception;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -45,10 +46,10 @@ class Handler extends ExceptionHandler
      * @return \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
      */
     public function render($request, Exception $exception) {
-        //Custom 404 error
-        if ($exception instanceof NotFoundHttpException) {
-            return response()->json(['ok' => false, 'error' => 'Method not found'], 404);
-        }
+//        Custom Errors
+        if ($exception instanceof NotFoundHttpException) return Helper::failed('Unknown endpoint', 404);
+        if ($exception instanceof ValidationException) return Helper::failed('Bad data', 400);
+
         return parent::render($request, $exception);
     }
 }

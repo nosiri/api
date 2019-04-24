@@ -150,6 +150,7 @@ class AppHelper {
     }
 
     public static function failed($error, $code) {
+        $error = str_replace(" ", "_", strtoupper($error));
         return response()->json(['ok' => false, 'error' => $error], $code);
     }
     

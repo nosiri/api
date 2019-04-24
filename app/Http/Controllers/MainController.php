@@ -103,20 +103,14 @@ class MainController extends Controller {
     public function soundcloud(Request $request) {
         $audio = trim($request->get('link'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'link' => ['required', 'url', 'regex:/^https?:\/\/((www|m)\.)?soundcloud\.com\/.+/i']
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $getAudio = json_decode(Helper::receiver($audio));
 
-        if (@!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link)) {
-            $error = 'Gateway error';
-            return Helper::failed($error, 502);
-        }
+        if (@!in_array($getAudio->status, ['alert', 'ok']) || count($getAudio->groups[0]->items) == 0 || empty($getAudio->groups[0]->items[0]->link))
+            return Helper::failed("Gateway error", 502);
         else {
             $link = $getAudio->groups[0]->items[0]->link;
 
@@ -130,29 +124,20 @@ class MainController extends Controller {
     public function youtube(Request $request) {
         $video = trim($request->get('link'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'link' => ["required", "url", "regex:/http[s]?:\/\/(?:(?:m\.)|(?:www\.))?(?:youtube.com|youtu.be)\/.*/"]
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $getVideo = json_decode(Helper::receiver($video, true));
 
-        if (!in_array(@$getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0) {
-            $error = 'Gateway error';
-            return Helper::failed($error, 502);
-        }
+        if (!in_array(@$getVideo->status, ['alert', 'ok']) || count($getVideo->groups[0]->items) == 0)
+            return Helper::failed("Gateway error", 502);
         else {
             $getVideo = $getVideo->groups[0]->items[0];
             $title = $getVideo->title;
             $link = $getVideo->link;
 
-            if ($title == " " || substr($link, -5) == "_.mp4") {
-                $error = 'Censored video';
-                return Helper::failed($error, 403);
-            }
+            if ($title == " " || substr($link, -5) == "_.mp4") return Helper::failed("Censored video", 403);
 
             $result = [
                 'title' => $title,
@@ -165,19 +150,12 @@ class MainController extends Controller {
     public function npm(Request $request) {
         $query = trim($request->get('query'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'query' => 'required|string'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $search = json_decode(file_get_contents("https://api.npms.io/v2/search?q=$query&size=25&from=0"));
-        if (!$search->total) {
-            $error = 'Not found';
-            return Helper::failed($error, 400);
-        }
+        if (!$search->total) return Helper::failed("Not found", 400);
         else {
             $packages = [];
             for ($i = 0; $i < count($search->results); $i++) {
@@ -199,19 +177,12 @@ class MainController extends Controller {
     public function packagist(Request $request) {
         $query = trim($request->get('query'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'query' => 'required|string'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $search = json_decode(file_get_contents("https://packagist.org/search.json?q=$query&per_page=25&page=1"));
-        if (!$search->total) {
-            $error = 'Not found';
-            return Helper::failed($error, 400);
-        }
+        if (!$search->total) return Helper::failed("Not found", 400);
         else {
             $packages = [];
             for ($i = 0; $i < count($search->results); $i++) {
@@ -233,13 +204,9 @@ class MainController extends Controller {
     public function gravatar(Request $request) {
         $email = trim($request->get('email'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'email' => 'required|email'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $email = md5($email);
         $url = "https://s.gravatar.com/avatar/$email?s=256";
@@ -253,13 +220,9 @@ class MainController extends Controller {
     public function bankDetector(Request $request) {
         $card = Helper::convert(trim($request->get('card')));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'card' => 'required|size:16'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $banks = [
             '603799' => "ملی ایران",
@@ -292,10 +255,7 @@ class MainController extends Controller {
         $card = substr($card, 0, 6);
 
         if (!empty($banks[$card])) $bank = $banks[$card];
-        else {
-            $error = 'Card number is not valid';
-            return Helper::failed($error, 400);
-        }
+        else return Helper::failed("Invalid card", 400);
 
         $result = [
             'bank' => $bank,
@@ -308,13 +268,9 @@ class MainController extends Controller {
         $query = trim($request->get('query'));
         $source = env('VAJEHYAB_SOURCE');
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'query' => 'required|max:12|regex:/[ا-ی]/'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $query = urlencode($query);
         $time = (int)round(microtime(true) * 1000);
@@ -328,10 +284,7 @@ class MainController extends Controller {
         $response = json_decode(curl_exec($ch));
         curl_close($ch);
 
-        if (@!$response->response->status) {
-            $error = 'Not found';
-            return Helper::failed($error, 400);
-        }
+        if (@!$response->response->status) return Helper::failed("Not found", 400);
 
         $response->word->text = trim(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $response->word->text)));
 
@@ -349,13 +302,9 @@ class MainController extends Controller {
     public function omen(Request $request) {
         $id = trim($request->get('id'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'id' => 'integer|min:1|max:159'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $omenId = !empty($id) ? (int)$id : rand(1, 159);
         $omenURL = "http://www.beytoote.com/images/Hafez/$omenId.gif";
@@ -370,13 +319,9 @@ class MainController extends Controller {
     public function emamsadegh(Request $request) {
         $name = trim($request->get('name'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'name' => 'required|min:4|max:255'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $source = "https://iandish.ir/web/list?qs=$name&src=1";
         $ch = curl_init();
@@ -403,10 +348,7 @@ class MainController extends Controller {
             }
         }
 
-        if (!count($result)) {
-            $error = 'Not found';
-            return Helper::failed($error, 400);
-        }
+        if (!count($result)) return Helper::failed("Not found", 400);
         else {
             $result = [
                 'users' => $result
@@ -418,29 +360,21 @@ class MainController extends Controller {
     public function weather(Request $request) {
         $location = trim($request->get('location'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'id' => 'string|min:4|max:20'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         if (empty($location)) {
             $ip = Helper::instance()->IPInfo();
-            if (empty($ip['country'])) {
-                $error = 'Not found';
-                return Helper::failed($error, 400);
-            }
+            if (empty($ip['country'])) return Helper::failed("Not found", 400);
             $location = @$ip["country"];
             if (!empty(@$ip['state'])) $location .= " " . $ip["state"];
         }
 
         $locationName = ucwords(str_replace("\n", "" , file_get_contents("https://wttr.in/$location?format=%l")));
-        if ($locationName == "Not Found" || strstr($locationName, "Unknow location")) {
-            $error = 'Not found (' . $location . ')';
-            return Helper::failed($error, 400);
-        }
+        if ($locationName == "Not Found" || strstr($locationName, "Unknow location"))
+            return Helper::failed("Not found", 400);
+
         $weather = str_replace("\n", "", file_get_contents("http://wttr.in/$location?format=%c+%t"));
 
         $result = [
@@ -453,16 +387,11 @@ class MainController extends Controller {
     public function nassaab(Request $request) {
         $item = trim($request->get('item'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'item' => 'required|string|max:20'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
-        else {
-            return Helper::success("soon");
-        }
+        ])->validate();
+
+        return Helper::success("soon");
     }
 
     public function filimo(Request $request) {
@@ -471,13 +400,9 @@ class MainController extends Controller {
 
         $username = trim($request->get('username'));
 
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'username' => 'required|string'
-        ]);
-        if ($validator->fails()) {
-            $error = $validator->errors()->first();
-            return Helper::failed($error, 400);
-        }
+        ])->validate();
 
         $tv = "";
         $Mobile = [];
@@ -490,7 +415,7 @@ class MainController extends Controller {
         $response = curl_exec($ch);
 
         $tvCode = json_decode($response)->verifycodeget->code;
-        if (curl_errno($ch) || empty($tvCode)) return Helper::failed("Can't get TV Code", 502);
+        if (curl_errno($ch) || empty($tvCode)) return Helper::failed("Fetch TV code error", 502);
         curl_close($ch);
 
         #Get CSRF Token
@@ -510,7 +435,7 @@ class MainController extends Controller {
         $response = curl_exec($ch);
 
         $csrf = json_decode($response)->csrf->csrf_token;
-        if (curl_errno($ch) || empty($csrf)) return Helper::failed("Can't get CSRF Code", 502);
+        if (curl_errno($ch) || empty($csrf)) return Helper::failed("Fetch CSRF error", 502);
         curl_close($ch);
 
 
@@ -534,7 +459,7 @@ class MainController extends Controller {
         $response = curl_exec($ch);
 
         $mobile[] = json_decode($response)->signinstep1new->mobile_valid;
-        if (curl_errno($ch) || empty($mobile[0])) return Helper::failed("Error when fetching Mobile first part", 502);
+        if (curl_errno($ch) || empty($mobile[0])) return Helper::failed("Fetch first part error", 502);
         curl_close($ch);
 
         #Get temp_id
@@ -549,7 +474,7 @@ class MainController extends Controller {
         $response = curl_exec($ch);
 
         $tempID = json_decode($response)->data->attributes->temp_id;
-        if (curl_errno($ch) || empty($tempID)) return Helper::failed("Can't get Temp ID", 502);
+        if (curl_errno($ch) || empty($tempID)) return Helper::failed("Fetch temp id error", 502);
         curl_close($ch);
 
         #Get mobile second part
@@ -563,7 +488,7 @@ class MainController extends Controller {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $response = curl_exec($ch);
         $mobile[] = json_decode($response)->data->attributes->mobile_valid;
-        if (curl_errno($ch) || empty($mobile[1])) return Helper::failed("Error when fetching Mobile second part", 502);
+        if (curl_errno($ch) || empty($mobile[1])) return Helper::failed("Fetch second part error", 502);
         curl_close ($ch);
 
         #Parse Number

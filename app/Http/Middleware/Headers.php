@@ -29,9 +29,8 @@ class Headers {
             $response->header($key, $value);
         }
 
-        if (env('APP_ENV') == 'production' && env('APP_HTTPS') && !$request->secure()) {
+        if (env('APP_ENV') == 'production' && env('APP_HTTPS') && !$request->secure())
             return redirect($request->getRequestUri(), 302, $responseHeaders, true);
-        }
         else return $response;
     }
 }
