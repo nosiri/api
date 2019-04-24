@@ -464,4 +464,121 @@ class MainController extends Controller {
             return Helper::success("soon");
         }
     }
+
+    public function filimo(Request $request) {
+        $GUID = env('FILIMO_GUID');
+        $AFCN = env('FILIMO_AFCN');
+
+        $username = trim($request->get('username'));
+
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string'
+        ]);
+        if ($validator->fails()) {
+            $error = $validator->errors()->first();
+            return Helper::failed($error, 400);
+        }
+
+        $tv = "";
+        $Mobile = [];
+
+        #Get TV Code
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://www.filimo.com/etc/api/verifycodeget/devicetype/tvweb');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        $response = curl_exec($ch);
+
+        $tvCode = json_decode($response)->verifycodeget->code;
+        if (curl_errno($ch) || empty($tvCode)) return Helper::failed("Can't get TV Code", 502);
+        curl_close($ch);
+
+        #Get CSRF Token
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://www.filimo.com/etc/api/formconfig/action_name/stepsigninotp?responseSite=tv&code=$tvCode");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        $headers = [];
+        $headers[] = 'Host: www.filimo.com';
+        $headers[] = 'X-Sabaenv: SPA';
+        $headers[] = 'Accept: application/json, text/plain, */*';
+        $headers[] = 'User-Agent: ' . env('FAKE_USERAGENT');
+        $headers[] = 'Accept-Language: en-us';
+        $headers[] = 'Referer: https://www.filimo.com/signin/password?responseSite=tv&code=ph9al';
+        $headers[] = 'Dnt: 1';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+
+        $csrf = json_decode($response)->csrf->csrf_token;
+        if (curl_errno($ch) || empty($csrf)) return Helper::failed("Can't get CSRF Code", 502);
+        curl_close($ch);
+
+
+        #Get mobile first part
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://www.filimo.com/etc/api/signinstep1v3/usernamemo/$username?responseSite=tv&code=$tvCode");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "------WebKitFormBoundarysFDcYjZugXsvLCXH\nContent-Disposition: form-data; name=\"csrf_token\"\n\n$csrf\n------WebKitFormBoundarysFDcYjZugXsvLCXH--\n");
+        curl_setopt($ch, CURLOPT_POST, 1);
+        $headers = [];
+        $headers[] = 'Host: www.filimo.com';
+        $headers[] = 'Accept: application/json, text/plain, */*';
+        $headers[] = 'X-Sabaenv: SPA';
+        $headers[] = 'Accept-Language: en-us';
+        $headers[] = 'Content-Type: multipart/form-data; boundary=----WebKitFormBoundarysFDcYjZugXsvLCXH';
+        $headers[] = 'Origin: https://www.filimo.com';
+        $headers[] = 'User-Agent: ' . env('FAKE_USERAGENT');
+        $headers[] = 'Referer: https://www.filimo.com/login?responseSite=tv&code=mxfuk';
+        $headers[] = 'Dnt: 1';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+
+        $mobile[] = json_decode($response)->signinstep1new->mobile_valid;
+        if (curl_errno($ch) || empty($mobile[0])) return Helper::failed("Error when fetching Mobile first part", 502);
+        curl_close($ch);
+
+        #Get temp_id
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://www.filimo.com/_/api/fa/v1/user/Authenticate/auth?devicetype=ios&afcn=$AFCN&&guid=$GUID");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, '{\"sz\":\"130.0x274.0\",\"dt\":\"iPhone*8\",\"an\":\"Aparat Filimo\",\"sdk\":\"11.4\",\"os\":\"iOS\",\"ds\":\" 2.0\",\"vn\":\"4.0.4\",\"pkg\":\"com.aparat.iFilimo\",\"id\":\"' . $GUID . '\",\"afcn\":\"' . $AFCN . '\",\"vc\":\"64\",\"camp\":\"seeb\",\"oui\":\"\"}');
+        $headers = [];
+        $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+
+        $tempID = json_decode($response)->data->attributes->temp_id;
+        if (curl_errno($ch) || empty($tempID)) return Helper::failed("Can't get Temp ID", 502);
+        curl_close($ch);
+
+        #Get mobile second part
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://www.filimo.com/_/api/fa/v1/user/Authenticate/signin_step1?&account=$username&temp_id=$tempID&guid=$GUID");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A');
+        $headers = [];
+        $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        $mobile[] = json_decode($response)->data->attributes->mobile_valid;
+        if (curl_errno($ch) || empty($mobile[1])) return Helper::failed("Error when fetching Mobile second part", 502);
+        curl_close ($ch);
+
+        #Parse Number
+        if ($mobile[0] && $mobile[1]) {
+            $mobile['full'] = substr($mobile[0], 0, 9);
+            $mobile['full'] .= substr($mobile[1], 9, 3);
+            $mobile['full'] = '0' . substr($mobile['full'], 2);
+        }
+
+        $result = [
+            'mobile' => $mobile['full'],
+            'tv_code' => $tvCode,
+            'temp_id' => $tempID,
+        ];
+
+        return Helper::success($result);
+    }
 }

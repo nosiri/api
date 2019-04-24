@@ -145,21 +145,6 @@ class AppHelper {
         return $status;
     }
 
-    public static function filimo($text, $type) {
-        $user = env('FILIMO_USER');
-        $token = env('FILIMO_TOKEN');
-        $query = ($type == "search") ? "text" : "uid";
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "http://www.filimo.com/etc/api/$type/$query/$text/luser/$user/ltoken/$token/devicetype/ios");
-        curl_setopt($ch, CURLOPT_USERAGENT, '{\"sz\":\"130.0x274.0\",\"dt\":\"iPhone*8\",\"an\":\"Aparat Filimo\",\"sdk\":\"11.4\",\"os\":\"iOS\",\"ds\":\" 2.0\",\"vn\":\"4.0.4\",\"pkg\":\"com.aparat.iFilimo\",\"id\":\"VQ5F86Y2-C9N5-3T4U-O539-B4S5454A3580\",\"afcn\":\"845189796364845\",\"vc\":\"64\",\"camp\":\"seeb\",\"oui\":\"\"}');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $response = json_decode(curl_exec($ch))->$type;
-        curl_close($ch);
-
-        return $response;
-    }
-
     public static function success($result) {
         return response()->json(['ok' => true, 'result' => $result]);
     }
