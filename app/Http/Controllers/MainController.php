@@ -101,11 +101,11 @@ class MainController extends Controller {
     }
 
     public function soundcloud(Request $request) {
-        $audio = trim($request->get('link'));
-
         Validator::make($request->all(), [
             'link' => ['required', 'url', 'regex:/^https?:\/\/((www|m)\.)?soundcloud\.com\/.+/i']
         ])->validate();
+
+        $audio = trim($request->get('link'));
 
         $getAudio = json_decode(Helper::receiver($audio));
 
@@ -122,11 +122,11 @@ class MainController extends Controller {
     }
 
     public function youtube(Request $request) {
-        $video = trim($request->get('link'));
-
         Validator::make($request->all(), [
             'link' => ["required", "url", "regex:/http[s]?:\/\/(?:(?:m\.)|(?:www\.))?(?:youtube.com|youtu.be)\/.*/"]
         ])->validate();
+
+        $video = trim($request->get('link'));
 
         $getVideo = json_decode(Helper::receiver($video, true));
 
@@ -148,11 +148,11 @@ class MainController extends Controller {
     }
 
     public function npm(Request $request) {
-        $query = trim($request->get('query'));
-
         Validator::make($request->all(), [
             'query' => 'required|string'
         ])->validate();
+
+        $query = trim($request->get('query'));
 
         $search = json_decode(file_get_contents("https://api.npms.io/v2/search?q=$query&size=25&from=0"));
         if (!$search->total) return Helper::failed("Not found", 400);
@@ -175,11 +175,11 @@ class MainController extends Controller {
     }
 
     public function packagist(Request $request) {
-        $query = trim($request->get('query'));
-
         Validator::make($request->all(), [
             'query' => 'required|string'
         ])->validate();
+
+        $query = trim($request->get('query'));
 
         $search = json_decode(file_get_contents("https://packagist.org/search.json?q=$query&per_page=25&page=1"));
         if (!$search->total) return Helper::failed("Not found", 400);
@@ -202,11 +202,11 @@ class MainController extends Controller {
     }
 
     public function gravatar(Request $request) {
-        $email = trim($request->get('email'));
-
         Validator::make($request->all(), [
             'email' => 'required|email'
         ])->validate();
+
+        $email = trim($request->get('email'));
 
         $email = md5($email);
         $url = "https://s.gravatar.com/avatar/$email?s=256";
@@ -218,11 +218,11 @@ class MainController extends Controller {
     }
 
     public function bankDetector(Request $request) {
-        $card = Helper::convert(trim($request->get('card')));
-
         Validator::make($request->all(), [
             'card' => 'required|size:16'
         ])->validate();
+
+        $card = Helper::convert(trim($request->get('card')));
 
         $banks = [
             '603799' => "ملی ایران",
@@ -265,14 +265,12 @@ class MainController extends Controller {
     }
 
     public function dictionary(Request $request) {
-        $query = trim($request->get('query'));
-        $source = env('VAJEHYAB_SOURCE');
-
         Validator::make($request->all(), [
             'query' => 'required|max:12|regex:/[ا-ی]/'
         ])->validate();
 
-        $query = urlencode($query);
+        $query = urlencode(trim($request->get('query')));
+        $source = env('VAJEHYAB_SOURCE');
         $time = (int)round(microtime(true) * 1000);
 
         $ch = curl_init();
@@ -300,11 +298,11 @@ class MainController extends Controller {
     }
 
     public function omen(Request $request) {
-        $id = trim($request->get('id'));
-
         Validator::make($request->all(), [
             'id' => 'integer|min:1|max:159'
         ])->validate();
+
+        $id = trim($request->get('id'));
 
         $omenId = !empty($id) ? (int)$id : rand(1, 159);
         $omenURL = "http://www.beytoote.com/images/Hafez/$omenId.gif";
@@ -317,11 +315,11 @@ class MainController extends Controller {
     }
 
     public function emamsadegh(Request $request) {
-        $name = trim($request->get('name'));
-
         Validator::make($request->all(), [
             'name' => 'required|min:4|max:255'
         ])->validate();
+
+        $name = trim($request->get('name'));
 
         $source = "https://iandish.ir/web/list?qs=$name&src=1";
         $ch = curl_init();
@@ -358,11 +356,11 @@ class MainController extends Controller {
     }
 
     public function weather(Request $request) {
-        $location = trim($request->get('location'));
-
         Validator::make($request->all(), [
             'id' => 'string|min:4|max:20'
         ])->validate();
+
+        $location = trim($request->get('location'));
 
         if (empty($location)) {
             $ip = Helper::instance()->IPInfo();
@@ -385,27 +383,26 @@ class MainController extends Controller {
     }
 
     public function nassaab(Request $request) {
-        $item = trim($request->get('item'));
-
         Validator::make($request->all(), [
             'item' => 'required|string|max:20'
         ])->validate();
+
+        $item = trim($request->get('item'));
 
         return Helper::success("soon");
     }
 
     public function filimo(Request $request) {
-        $GUID = env('FILIMO_GUID');
-        $AFCN = env('FILIMO_AFCN');
-
-        $username = trim($request->get('username'));
-
         Validator::make($request->all(), [
             'username' => 'required|string'
         ])->validate();
 
+        $GUID = env('FILIMO_GUID');
+        $AFCN = env('FILIMO_AFCN');
         $tv = "";
         $Mobile = [];
+
+        $username = trim($request->get('username'));
 
         #Get TV Code
         $ch = curl_init();

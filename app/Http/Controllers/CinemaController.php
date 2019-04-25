@@ -84,13 +84,11 @@ class CinemaController extends Controller {
     }
 
     public function search(Request $request) {
-        $query = $request->get('query');
-
         Validator::make($request->all(), [
             'query' => 'required'
         ])->validate();
 
-        $query = urlencode($query);
+        $query = urlencode($request->get('query'));
 
         $namava = $this->namava($query, "search");
         $filimo = $this->filimo($query, "search");
@@ -153,12 +151,12 @@ class CinemaController extends Controller {
     }
 
     public function get(Request $request) {
-        $id = trim($request->get('id'));
-        $result = false;
-
         Validator::make($request->all(), [
             'id' => 'required',
         ])->validate();
+
+        $result = false;
+        $id = trim($request->get('id'));
 
         if (!is_numeric($id) && strlen($id) == 5) {
             $movie = $this->filimo($id, "movie");
@@ -250,6 +248,6 @@ class CinemaController extends Controller {
         }
 
         if ($result) return Helper::success($result);
-        else return Helper::failed("Internal Error", 500);
+        else return Helper::failed("Internal error", 500);
     }
 }
