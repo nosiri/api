@@ -58,8 +58,8 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->get('filimo', 'MainController@filimo');
 
-    $router->group(['prefix' => 'media'], function () use ($router) {
-        $router->get('search', 'MediaController@search');
-        $router->get('movie', 'MediaController@get');
+    $router->group(['prefix' => 'cinema'], function () use ($router) {
+        $router->get('search', 'CinemaController@search');
+        $router->get('movie', 'CinemaController@get');
     });
 });

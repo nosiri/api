@@ -6,7 +6,7 @@ use App\Helpers\AppHelper as Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class MediaController extends Controller {
+class CinemaController extends Controller {
     private function searchInX($item, $value, $source) {
         for ($i = 0; $i < count($source); $i++) {
             if ($source[$i][$item] == $value) return ['ok' => true, 'id' => $i];
