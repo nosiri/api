@@ -178,7 +178,6 @@ class CinemaController extends Controller {
                     'title' => $movie->movie_title,
                     'id' => $movie->uid,
                     'image' => $movie->movie_img_s,
-                    'description' => $movie->descr
                 ];
             }
         }
@@ -189,7 +188,6 @@ class CinemaController extends Controller {
                     'title' => $movie->Name,
                     'id' => $movie->PostId,
                     'image' => $movie->ImageAbsoluteUrl,
-                    'description' => $movie->ShortDescription
                 ];
             }
         }
@@ -215,7 +213,6 @@ class CinemaController extends Controller {
                     'title' => $movie["title"],
                     'id' => $movie["id"],
                     'image' => $movie["image"],
-                    'description' => $movie["description"],
                 ];
             }
         }
