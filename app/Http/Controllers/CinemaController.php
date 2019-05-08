@@ -64,10 +64,11 @@ class CinemaController extends Controller {
         return $result;
     }
 
-    private function filimo($text, $action, $count = 20) {
+    private function filimo($text, $action, $query = null, $count = null) {
         $user = env('FILIMO_USER');
         $token = env('FILIMO_TOKEN');
-        $query = ($action == "search") ? "text" : "uid";
+        if (empty($query)) $query = $action == "search" ? "text" : "uid";
+        if (empty($count)) $count = env('FILIMO_SEARCH_COUNT');
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://www.filimo.com/etc/api/$action/$query/$text/luser/$user/ltoken/$token/devicetype/ios");
@@ -78,9 +79,76 @@ class CinemaController extends Controller {
 
         if (empty($response)) return false;
 
-        if ($action == "search" && count($response) > $count) $response = array_slice($response, 0, $count);
+        if (!empty($count) && count($response) > $count) $response = array_slice($response, 0, $count);
 
         return $response;
+    }
+
+    public function home() {
+        $movies = [];
+        $result = [];
+
+        $filimo = $this->filimo("9911133", "movielistbycat", "catid", 5);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/movie/related");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, ["a" => "b"]);
+        curl_setopt($ch, CURLOPT_USERAGENT, env('NAMAVA_USERAGENT'));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded','auth_token: ' . env('NAMAVA_TOKEN')]);
+        $namava = json_decode(curl_exec($ch));
+
+        if (empty($filimo) && empty($namava)) Helper::failed("Empty list", 502);
+
+        foreach ($filimo as $movie) {
+            $movies[] = [
+                'service' => 'filimo',
+                'title' => $movie->movie_title,
+                'id' => $movie->uid,
+                'image' => $movie->movie_img_s,
+                'description' => $movie->descr
+            ];
+        }
+        foreach ($namava as $movie) {
+            $movies[] = [
+                'service' => 'namava',
+                'title' => $movie->Name,
+                'id' => $movie->PostId,
+                'image' => $movie->ImageAbsoluteUrl,
+                'description' => $movie->ShortDescription
+            ];
+        }
+
+        //Find and merge duplicates
+        foreach ($movies as $movie) {
+            $search = $this->searchInX("title", $movie["title"], $result);
+
+            if ($search["ok"]) {
+                $IDs = $this->findId($movie["title"], $movies);
+                if (!$IDs["ok"]) continue;
+                else $IDs = $IDs["result"];
+
+                $result[$search["id"]]["service"] = "both";
+                $result[$search["id"]]["id"] = [
+                    'filimo' => $IDs["filimo"],
+                    'namava' => $IDs["namava"]
+                ];
+            }
+            else {
+                $result[] = [
+                    'service' => $movie["service"],
+                    'title' => $movie["title"],
+                    'id' => $movie["id"],
+                    'image' => $movie["image"],
+                    'description' => $movie["description"],
+                ];
+            }
+        }
+
+        shuffle($result);
+
+        return Helper::success($result);
     }
 
     public function search(Request $request) {
@@ -121,6 +189,7 @@ class CinemaController extends Controller {
             }
         }
 
+        //Find and merge duplicates
         foreach ($movies as $movie) {
             $search = $this->searchInX("title", $movie["title"], $result);
 
