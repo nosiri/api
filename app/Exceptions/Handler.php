@@ -47,8 +47,8 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception) {
 //        Custom Errors
-        if ($exception instanceof NotFoundHttpException) return Helper::failed('Unknown endpoint', 404);
-        if ($exception instanceof ValidationException) return Helper::failed('Bad data', 400);
+        if ($exception instanceof NotFoundHttpException) return Helper::failed("Unknown endpoint", 404);
+        if ($exception instanceof ValidationException) return Helper::failed("Bad data", 400);
 
         return parent::render($request, $exception);
     }

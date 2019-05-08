@@ -61,6 +61,6 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
     $router->group(['prefix' => 'cinema'], function () use ($router) {
         $router->get('/', 'CinemaController@home');
         $router->get('search', 'CinemaController@search');
-        $router->get('movie', 'CinemaController@get');
+        $router->get('movie/{id}', 'CinemaController@get');
     });
 });

@@ -78,8 +78,9 @@ class CinemaController extends Controller {
         curl_close($ch);
 
         if (empty($response)) return false;
+        if ($action == "movie" && empty($response->uid)) return false;
 
-        if (!empty($count) && count($response) > $count) $response = array_slice($response, 0, $count);
+        if ($action != "movie" && !empty($count) && count($response) > $count) $response = array_slice($response, 0, $count);
 
         return $response;
     }
@@ -101,23 +102,27 @@ class CinemaController extends Controller {
 
         if (empty($filimo) && empty($namava)) Helper::failed("Empty list", 502);
 
-        foreach ($filimo as $movie) {
-            $movies[] = [
-                'service' => 'filimo',
-                'title' => $movie->movie_title,
-                'id' => $movie->uid,
-                'image' => $movie->movie_img_s,
-                'description' => $movie->descr
-            ];
+        if (!empty($filimo)) {
+            foreach ($filimo as $movie) {
+                $movies[] = [
+                    'service' => 'filimo',
+                    'title' => $movie->movie_title,
+                    'id' => $movie->uid,
+                    'image' => $movie->movie_img_s,
+                    'description' => $movie->descr
+                ];
+            }
         }
-        foreach ($namava as $movie) {
-            $movies[] = [
-                'service' => 'namava',
-                'title' => $movie->Name,
-                'id' => $movie->PostId,
-                'image' => $movie->ImageAbsoluteUrl,
-                'description' => $movie->ShortDescription
-            ];
+        if (!empty($namava)) {
+            foreach ($namava as $movie) {
+                $movies[] = [
+                    'service' => 'namava',
+                    'title' => $movie->Name,
+                    'id' => $movie->PostId,
+                    'image' => $movie->ImageAbsoluteUrl,
+                    'description' => $movie->ShortDescription
+                ];
+            }
         }
 
         //Find and merge duplicates
@@ -219,36 +224,87 @@ class CinemaController extends Controller {
         else return Helper::success($result);
     }
 
-    public function get(Request $request) {
-        Validator::make($request->all(), [
-            'id' => 'required',
-        ])->validate();
+    public function get($id) {
+        if (empty($id)) return Helper::failed("Bad data", 400);
+        $id = trim($id);
+        $result = [];
 
-        $result = false;
-        $id = trim($request->get('id'));
-
+        //Filimo
         if (!is_numeric($id) && strlen($id) == 5) {
             $movie = $this->filimo($id, "movie");
 
             if (@empty($movie->uid) || @$movie->uid != $id)
                 return Helper::failed("Filimo incorrect id", 400);
+
+            $title = $movie->movie_title;
+            $image = $movie->movie_img_b;
+            $description = $movie->description;
+            $year = (int)$movie->produced_year;
+            $duration = (int)$movie->duration;
+            $imdb = $movie->imdb_rate && $movie->imdb_rate != 0 ? (float)$movie->imdb_rate : null;
+            $rate = $movie->rate_avrage ? (float)$movie->rate_avrage : null;
+
+            $user = env('FILIMO_USER');
+            $token = env('FILIMO_TOKEN');
+            $link = "https://www.filimo.com/etc/api/movie/uid/$id/luser/$user/ltoken/$token/devicetype/ios";
+
+            $genres = [];
+            if (!empty($movie->category_1)) $genres[] = $movie->category_1;
+            if (!empty($movie->category_2)) $genres[] = $movie->category_2;
+
+            $result = [
+                'title' => $title,
+                'image' => $image,
+                'description' => $description,
+                'year' => $year,
+                'duration' => $duration,
+                'genres' => $genres,
+                'rate' => [
+                    'imdb' => $imdb,
+                    'filimo' => $rate,
+                ],
+                'link' => $link
+            ];
+        }
+        //Namava
+        else if (is_numeric($id)) {
+            $movie = $this->namava($id, "movie");
+
+            if ($id != @$movie->PostId || !in_array($movie->PostTypeSlug, ["movie", "episode"]))
+                return Helper::failed("Namava incorrect id", 400);
+
+            $title = $movie->Name;
+            $image = $movie->ImageAbsoluteUrl;
+
+            $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $movie->FullDescription))));
+            preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $description);
+            $description = $description[0][0];
+
+            $year = null;
+            $duration = null;
+            $rate = null;
+
+            for ($i = 0; $i < count($movie->PostTypeAttrValueModels); $i++) {
+                if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-year") $year = (int)$movie->PostTypeAttrValueModels[$i]->Value;
+                else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-duration") $duration = (int)$movie->PostTypeAttrValueModels[$i]->Value;
+                else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-imdb-rate") $rate = (float)$movie->PostTypeAttrValueModels[$i]->Value;
+            }
+
+            $genres = [];
+            for ($i=0; $i < count($movie->PostCategories); $i++)
+                $genres[] = $movie->PostCategories[$i]->Name;
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "http://shahbaghi.com/F/data/namavaa/stream.php");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "id=$id");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+            $m3u8 = @json_decode(curl_exec($ch))->link;
+            curl_close($ch);
+
+            if (empty($m3u8)) $result = false;
             else {
-                $title = $movie->movie_title;
-                $image = $movie->movie_img_b;
-                $description = $movie->description;
-                $year = (int)$movie->produced_year;
-                $duration = (int)$movie->duration;
-                $imdb = $movie->imdb_rate && $movie->imdb_rate != 0 ? (float)$movie->imdb_rate : null;
-                $rate = $movie->rate_avrage ? (float)$movie->rate_avrage : null;
-
-                $user = env('FILIMO_USER');
-                $token = env('FILIMO_TOKEN');
-                $link = "https://www.filimo.com/etc/api/movie/uid/$id/luser/$user/ltoken/$token/devicetype/ios";
-
-                $genres = [];
-                if (!empty($movie->category_1)) $genres[] = $movie->category_1;
-                if (!empty($movie->category_2)) $genres[] = $movie->category_2;
-
                 $result = [
                     'title' => $title,
                     'image' => $image,
@@ -256,65 +312,64 @@ class CinemaController extends Controller {
                     'year' => $year,
                     'duration' => $duration,
                     'genres' => $genres,
-                    'rate' => [
-                        'imdb' => $imdb,
-                        'filimo' => $rate,
-                    ],
-                    'link' => $link
+                    'rate' => $rate,
+                    'link' => $m3u8
                 ];
             }
         }
-        else if (is_numeric($id)) {
-            $movie = $this->namava($id, "movie");
+        //Mix
+        else if (strlen($id) > 6 && strstr($id, "-")) {
+            $exp = explode("-", $id);
 
-            if ($id != @$movie->PostId || !in_array($movie->PostTypeSlug, ["movie", "episode"]))
+            $filimoId = !is_numeric($exp[0]) && strlen($exp[0]) == 5 ? $exp[0] : null;
+            $namavaId = is_numeric($exp[1]) ? $exp[1] : null;
+            if (empty($filimoId) || empty($namavaId)) return Helper::failed("Bad format", 400);
+
+            $filimo = $this->filimo($filimoId, "movie");
+            if (@empty($filimo->uid) || @$filimo->uid != $filimoId)
+                return Helper::failed("Filimo incorrect id", 400);
+
+            $namava = $this->namava($namavaId, "movie");
+            if (@$namava->PostId != $namavaId || !in_array($namava->PostTypeSlug, ["movie", "episode"]))
                 return Helper::failed("Namava incorrect id", 400);
-            else {
-                $title = $movie->Name;
-                $image = $movie->ImageAbsoluteUrl;
 
-                $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $movie->FullDescription))));
-                preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $description);
-                $description = $description[0][0];
+            $filimoDescription = $filimo->description;
+            $namavaDescription = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $namava->FullDescription))));
+            preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $namavaDescription, $namavaDescription);
+            $namavaDescription = $namavaDescription[0][0];
 
-                $year = null;
-                $duration = null;
-                $rate = null;
+            $filimoGenres = [];
+            if (!empty($filimo->category_1)) $filimoGenres[] = $filimo->category_1;
+            if (!empty($filimo->category_2)) $filimoGenres[] = $filimo->category_2;
+            $namavaGenres = [];
+            for ($i=0; $i < count($namava->PostCategories); $i++)
+                $namavaGenres[] = $namava->PostCategories[$i]->Name;
 
-                for ($i = 0; $i < count($movie->PostTypeAttrValueModels); $i++) {
-                    if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-year") $year = (int)$movie->PostTypeAttrValueModels[$i]->Value;
-                    else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-duration") $duration = (int)$movie->PostTypeAttrValueModels[$i]->Value;
-                    else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-imdb-rate") $rate = (float)$movie->PostTypeAttrValueModels[$i]->Value;
-                }
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "http://shahbaghi.com/F/data/namavaa/stream.php");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "id=$namavaId");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+            $namavaLink = @json_decode(curl_exec($ch))->link;
+            curl_close($ch);
 
-                $genres = [];
-                for ($i=0; $i < count($movie->PostCategories); $i++)
-                    $genres[] = $movie->PostCategories[$i]->Name;
-
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, "http://shahbaghi.com/F/data/namavaa/stream.php");
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, "id=$id");
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-                $m3u8 = @json_decode(curl_exec($ch))->link;
-                curl_close($ch);
-
-                if (empty($m3u8)) $result = false;
-                else {
-                    $result = [
-                        'title' => $title,
-                        'image' => $image,
-                        'description' => $description,
-                        'year' => $year,
-                        'duration' => $duration,
-                        'genres' => $genres,
-                        'rate' => $rate,
-                        'link' => $m3u8
-                    ];
-                }
-            }
+            $result = [
+                'title' => $filimo->movie_title,
+                'image' => $filimo->movie_img_b,
+                'description' => mb_strlen($filimoDescription) > $namavaDescription ? $filimoDescription : $namavaDescription,
+                'year' => (int)$filimo->produced_year,
+                'duration' => (int)$filimo->duration,
+                'genres' => count($filimoGenres) > count($namavaGenres) ? $filimoGenres : $namavaGenres,
+                'rate' => $filimo->imdb_rate != 0 ? (float)$filimo->imdb_rate : (float)$filimo->rate_avrage,
+                'link' => [
+                    'filimo' => $filimo->movie_src,
+                    'namava' => $namavaLink
+                ]
+            ];
         }
+
+        else return Helper::failed("Bad data", 400);
 
         if ($result) return Helper::success($result);
         else return Helper::failed("Internal error", 500);
