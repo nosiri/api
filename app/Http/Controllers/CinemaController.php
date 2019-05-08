@@ -235,6 +235,7 @@ class CinemaController extends Controller {
 
             $title = $movie->movie_title;
             $image = $movie->movie_img_b;
+            $cover = $movie->cover == "yes" ? $movie->cover_adr : null;
             $description = $movie->description;
             $year = (int)$movie->produced_year;
             $duration = (int)$movie->duration;
@@ -252,6 +253,7 @@ class CinemaController extends Controller {
             $result = [
                 'title' => $title,
                 'image' => $image,
+                'cover' => $cover,
                 'description' => $description,
                 'year' => $year,
                 'duration' => $duration,
@@ -280,11 +282,13 @@ class CinemaController extends Controller {
             $year = null;
             $duration = null;
             $rate = null;
+            $cover = null;
 
             for ($i = 0; $i < count($movie->PostTypeAttrValueModels); $i++) {
                 if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-year") $year = (int)$movie->PostTypeAttrValueModels[$i]->Value;
                 else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-duration") $duration = (int)$movie->PostTypeAttrValueModels[$i]->Value;
                 else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-imdb-rate") $rate = (float)$movie->PostTypeAttrValueModels[$i]->Value;
+                else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-hero-image") $cover = $movie->PostTypeAttrValueModels[$i]->Value;
             }
 
             $genres = [];
@@ -305,6 +309,7 @@ class CinemaController extends Controller {
                 $result = [
                     'title' => $title,
                     'image' => $image,
+                    'cover' => !empty($cover) ? "http://static.namava.ir" . $cover : null,
                     'description' => $description,
                     'year' => $year,
                     'duration' => $duration,
@@ -355,6 +360,7 @@ class CinemaController extends Controller {
                 'title' => $filimo->movie_title,
                 'image' => $filimo->movie_img_b,
                 'description' => mb_strlen($filimoDescription) > $namavaDescription ? $filimoDescription : $namavaDescription,
+                'cover' => $filimo->cover == "yes" ? $filimo->cover_adr : false,
                 'year' => (int)$filimo->produced_year,
                 'duration' => (int)$filimo->duration,
                 'genres' => count($filimoGenres) > count($namavaGenres) ? $filimoGenres : $namavaGenres,
