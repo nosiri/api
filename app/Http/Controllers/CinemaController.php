@@ -187,7 +187,7 @@ class CinemaController extends Controller {
                     'service' => 'namava',
                     'title' => $movie->Name,
                     'id' => $movie->PostId,
-                    'image' => $movie->ImageAbsoluteUrl,
+                    'image' => str_replace("http://", "https://", $movie->ImageAbsoluteUrl),
                 ];
             }
         }
@@ -274,6 +274,7 @@ class CinemaController extends Controller {
 
             $title = $movie->Name;
             $image = $movie->ImageAbsoluteUrl;
+            $image = str_replace("http://", "https://", $image);
 
             $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $movie->FullDescription))));
             preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $description);
@@ -309,7 +310,7 @@ class CinemaController extends Controller {
                 $result = [
                     'title' => $title,
                     'image' => $image,
-                    'cover' => !empty($cover) ? "http://static.namava.ir" . $cover : null,
+                    'cover' => !empty($cover) ? "https://static.namava.ir" . $cover : null,
                     'description' => $description,
                     'year' => $year,
                     'duration' => $duration,
