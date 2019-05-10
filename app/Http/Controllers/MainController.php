@@ -50,8 +50,8 @@ class MainController extends Controller {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $html = curl_exec($ch);
         curl_close($ch);
 
@@ -63,12 +63,12 @@ class MainController extends Controller {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/json');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
         curl_setopt($ch, CURLOPT_REFERER, 'https://bonbast.com/');
         curl_setopt($ch, CURLOPT_POSTFIELDS, "hash=$hash");
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Requested-With: XMLHttpRequest']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $response = json_decode(curl_exec($ch));
         curl_close($ch);
 
@@ -276,9 +276,9 @@ class MainController extends Controller {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://www.vajehyab.com/$source/$query?_=$time");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-vy-ajax: true']);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $response = json_decode(curl_exec($ch));
         curl_close($ch);
 
@@ -325,8 +325,8 @@ class MainController extends Controller {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $source);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $html = curl_exec($ch);
         curl_close($ch);
 
