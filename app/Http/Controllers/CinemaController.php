@@ -280,8 +280,8 @@ class CinemaController extends Controller {
             $image = str_replace("http://", "https://", $image);
 
             $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $movie->FullDescription))));
-            preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $description);
-            $description = $description[0][0];
+            preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $newDescription);
+            $description = !empty(@$newDescription[0][0]) ? $newDescription[0][0] : $description;
 
             $year = null;
             $duration = null;
