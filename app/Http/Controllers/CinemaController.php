@@ -339,6 +339,9 @@ class CinemaController extends Controller {
             if (@$namava->PostId != $namavaId || !in_array($namava->PostTypeSlug, ["movie", "episode"]))
                 return Helper::failed("Namava incorrect id", 400);
 
+            if ($filimo->movie_title != $namava->Name)
+                return Helper::failed("Not match ids", 400);
+
             $filimoDescription = $filimo->description;
             $namavaDescription = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $namava->FullDescription))));
             preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $namavaDescription, $namavaDescription);
