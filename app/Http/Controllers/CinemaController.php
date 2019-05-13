@@ -20,9 +20,9 @@ class CinemaController extends Controller {
             'namava' => ""
         ];
 
-        for ($i = 0; $i < count($source); $i++) {
+        for ($i = 0; $i < count($source); $i++)
             if ($source[$i]["title"] == $name) $result[$source[$i]["service"]] = $source[$i]["id"];
-        }
+
         if (!empty($result['filimo']) && !empty($result['namava'])) return ['ok' => true, 'result' => $result];
         return ['ok' => false];
     }
@@ -36,7 +36,7 @@ class CinemaController extends Controller {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_USERAGENT, env('NAMAVA_USERAGENT'));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded','auth_token: ' . env('NAMAVA_TOKEN')]);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded', 'auth_token: ' . env('NAMAVA_TOKEN')]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "Text=$query&count=$count&page=1");
             curl_setopt($ch, CURLOPT_TIMEOUT, 5);
             $response = @json_decode(curl_exec($ch));
@@ -82,25 +82,26 @@ class CinemaController extends Controller {
 
         if (empty($response)) return false;
         if ($action == "movie" && empty($response->uid)) return false;
-
-        if ($action != "movie" && !empty($count) && count($response) > $count) $response = array_slice($response, 0, $count);
+        if ($action != "movie" && !empty($count) && count($response) > $count)
+            $response = array_slice($response, 0, $count);
 
         return $response;
     }
 
     public function home() {
+        $count = 12;
         $movies = [];
         $result = [];
 
-        $filimo = $this->filimo("9911133", "movielistbycat", "catid", 5);
+        $filimo = $this->filimo("9911133", "movielistbycat", "catid", $count);
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/movie/related");
+        curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/movie/newest");
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, ["a" => "b"]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "Count=$count");
         curl_setopt($ch, CURLOPT_USERAGENT, env('NAMAVA_USERAGENT'));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded','auth_token: ' . env('NAMAVA_TOKEN')]);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded', 'auth_token: ' . env('NAMAVA_TOKEN')]);
         $namava = json_decode(curl_exec($ch));
 
         if (empty($filimo) && empty($namava)) Helper::failed("Empty list", 502);
@@ -149,7 +150,7 @@ class CinemaController extends Controller {
                     'title' => $movie["title"],
                     'id' => $movie["id"],
                     'image' => $movie["image"],
-                    'description' => $movie["description"],
+                    'description' => $movie["description"]
                 ];
             }
         }
@@ -180,7 +181,7 @@ class CinemaController extends Controller {
                     'service' => 'filimo',
                     'title' => $movie->movie_title,
                     'id' => $movie->uid,
-                    'image' => $movie->movie_img_s,
+                    'image' => $movie->movie_img_s
                 ];
             }
         }
@@ -215,7 +216,7 @@ class CinemaController extends Controller {
                     'service' => $movie["service"],
                     'title' => $movie["title"],
                     'id' => $movie["id"],
-                    'image' => $movie["image"],
+                    'image' => $movie["image"]
                 ];
             }
         }
