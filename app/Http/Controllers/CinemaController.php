@@ -122,7 +122,7 @@ class CinemaController extends Controller {
                     'service' => 'namava',
                     'title' => $movie->Name,
                     'id' => $movie->PostId,
-                    'image' => $movie->ImageAbsoluteUrl,
+                    'image' => str_replace("http://", "https://", $movie->ImageAbsoluteUrl),
                     'description' => $movie->ShortDescription
                 ];
             }
