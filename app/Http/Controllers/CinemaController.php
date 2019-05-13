@@ -33,8 +33,8 @@ class CinemaController extends Controller {
         if ($action == "search") {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/movie/search");
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_USERAGENT, env('NAMAVA_USERAGENT'));
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded', 'auth_token: ' . env('NAMAVA_TOKEN')]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "Text=$query&count=$count&page=1");
@@ -52,7 +52,7 @@ class CinemaController extends Controller {
         else if ($action == "movie") {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/movie/$query");
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_USERAGENT, env('NAMAVA_USERAGENT'));
             curl_setopt($ch, CURLOPT_TIMEOUT, 5);
             $result = @json_decode(curl_exec($ch));
@@ -75,7 +75,7 @@ class CinemaController extends Controller {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://www.filimo.com/etc/api/$action/$query/$text/luser/$user/ltoken/$token/devicetype/ios");
         curl_setopt($ch, CURLOPT_USERAGENT, '{\"sz\":\"130.0x274.0\",\"dt\":\"iPhone*8\",\"an\":\"Aparat Filimo\",\"sdk\":\"11.4\",\"os\":\"iOS\",\"ds\":\" 2.0\",\"vn\":\"4.0.4\",\"pkg\":\"com.aparat.iFilimo\",\"id\":\"VQ5F86Y2-C9N5-3T4U-O539-B4S5454A3580\",\"afcn\":\"845189796364845\",\"vc\":\"64\",\"camp\":\"seeb\",\"oui\":\"\"}');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $response = @json_decode(curl_exec($ch))->$action;
         curl_close($ch);
@@ -191,7 +191,7 @@ class CinemaController extends Controller {
                     'service' => 'namava',
                     'title' => $movie->Name,
                     'id' => $movie->PostId,
-                    'image' => str_replace("http://", "https://", $movie->ImageAbsoluteUrl),
+                    'image' => str_replace("http://", "https://", $movie->ImageAbsoluteUrl)
                 ];
             }
         }
@@ -228,7 +228,6 @@ class CinemaController extends Controller {
     public function get($id) {
         if (empty($id)) return Helper::failed("Bad data", 400);
         $id = trim($id);
-        $result = [];
 
         //Filimo
         if (!is_numeric($id) && strlen($id) == 5) {
@@ -300,10 +299,29 @@ class CinemaController extends Controller {
             for ($i=0; $i < count($movie->PostCategories); $i++)
                 $genres[] = $movie->PostCategories[$i]->Name;
 
+
+            $category = $movie->PostCategories[0]->PostCategoryId;
+            //Recommends
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/recommender/recommendedByPost/$id/$category/8");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $recommendedMovies = @json_decode(curl_exec($ch));
+            curl_close($ch);
+
+            for ($i = 0; $i < count($recommendedMovies); $i++) {
+                if (!in_array($recommendedMovies[$i]->PostTypeSlug, ["movie", "episode"])) continue;
+                $recommended[] = [
+                    'title' => $recommendedMovies[$i]->Name,
+                    'id' => $recommendedMovies[$i]->PostId,
+                    'image' => str_replace("http://", "https://", $recommendedMovies[$i]->ImageAbsoluteUrl)
+                ];
+            }
+
+            //Fetch Movie link
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "http://shahbaghi.com/F/data/namavaa/stream.php");
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "id=$id");
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
             $m3u8 = @json_decode(curl_exec($ch))->link;
@@ -320,7 +338,8 @@ class CinemaController extends Controller {
                     'duration' => $duration,
                     'genres' => $genres,
                     'rate' => $rate,
-                    'link' => $m3u8
+                    'link' => $m3u8,
+                    'recommended' => !empty($recommended) ? $recommended : null
                 ];
             }
         }
@@ -352,13 +371,13 @@ class CinemaController extends Controller {
             if (!empty($filimo->category_1)) $filimoGenres[] = $filimo->category_1;
             if (!empty($filimo->category_2)) $filimoGenres[] = $filimo->category_2;
             $namavaGenres = [];
-            for ($i=0; $i < count($namava->PostCategories); $i++)
+            for ($i = 0; $i < count($namava->PostCategories); $i++)
                 $namavaGenres[] = $namava->PostCategories[$i]->Name;
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "http://shahbaghi.com/F/data/namavaa/stream.php");
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "id=$namavaId");
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
             $namavaLink = @json_decode(curl_exec($ch))->link;
@@ -382,7 +401,7 @@ class CinemaController extends Controller {
 
         else return Helper::failed("Bad data", 400);
 
-        if ($result) return Helper::success($result);
+        if (!empty(@$result)) return Helper::success($result);
         else return Helper::failed("Internal error", 500);
     }
 }
