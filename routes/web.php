@@ -50,6 +50,8 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->get('omen', 'MainController@omen');
 
+    $router->get('quote', 'MainController@quote');
+
     $router->get('emamsadegh', 'MainController@emamsadegh');
 
     $router->get('weather', 'MainController@weather');

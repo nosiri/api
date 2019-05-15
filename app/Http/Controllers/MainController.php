@@ -314,6 +314,32 @@ class MainController extends Controller {
         return Helper::success($result);
     }
 
+    public function quote() {
+        $quote = "http://api.sokhanak.com/v1/embed_widgets/?";
+        $quote .= http_build_query([
+            'lang' => 'fa_IR',
+            'apiKey' => env('SOKHANAK_TOKEN'),
+        ]);
+
+        $ch = curl_init($quote);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+        $response = json_decode(curl_exec($ch));
+
+        if (isset($response->error) || empty($response->quote_text))
+            return Helper::failed(502, 'SOKHANAK_ERROR');
+
+        $result = [
+            'quote' => $response->quote_text,
+            'author' => [
+                'name' => $response->quote_author,
+                'photo' => "https:" . $response->quote_photo[0]
+            ]
+        ];
+
+        return Helper::success($result);
+    }
+
     public function emamsadegh(Request $request) {
         Validator::make($request->all(), [
             'name' => 'required|min:4|max:255'
