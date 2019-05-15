@@ -383,39 +383,56 @@ class MainController extends Controller {
 
     public function weather(Request $request) {
         Validator::make($request->all(), [
-            'id' => 'string|min:4|max:20'
+            'lat' => ['required', 'regex:/^(\+|-)?(?:90(?:(?:\.0{1,6})?)|(?:[0-9]|[1-8][0-9])(?:(?:\.[0-9]{1,6})?))$/'],
+            'long' => ['required', 'regex:/^(\+|-)?(?:180(?:(?:\.0{1,6})?)|(?:[0-9]|[1-9][0-9]|1[0-7][0-9])(?:(?:\.[0-9]{1,6})?))$/']
         ])->validate();
 
-        $location = trim($request->get('location'));
+        $location = null;
+        $weatherToken = env('WEATHER_TOKEN');
+        $opencageToken = env('OPENCAGE_TOKEN');
 
-        if (empty($location)) {
-            $ip = Helper::instance()->IPInfo();
-            if (empty($ip['country'])) return Helper::failed("Not found", 400);
-            $location = @$ip["country"];
-            if (!empty(@$ip['state'])) $location .= " " . $ip["state"];
+        $latitude = trim($request->get('lat'));
+        $longitude = trim($request->get('long'));
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://api.weather.com/v1/geocode/$latitude/$longitude/aggregate.json?apiKey=$weatherToken&products=conditionsshort,fcstdaily10short,fcsthourly24short,nowlinks");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $weather = json_decode(curl_exec($ch));
+
+        if ($weather->metadata->status_code != 200 || $weather->conditionsshort->metadata->status_code != 200)
+            return Helper::failed("502", "Weather error");
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://api.opencagedata.com/geocode/v1/json?q=$latitude+$longitude&key=$opencageToken");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $opencage = json_decode(curl_exec($ch));
+
+        if ($opencage->status->code == 200) {
+            if (!empty($opencage->results[0]->components->city)) $location = $opencage->results[0]->components->city;
+            else if (!empty($opencage->results[0]->components->state)) $location = $opencage->results[0]->components->state;
         }
 
-        $locationName = ucwords(str_replace("\n", "" , file_get_contents("https://wttr.in/$location?format=%l")));
-        if ($locationName == "Not Found" || strstr($locationName, "Unknow location"))
-            return Helper::failed("Not found", 400);
-
-        $weather = str_replace("\n", "", file_get_contents("http://wttr.in/$location?format=%c+%t"));
-
         $result = [
-            'location' => $locationName,
-            'weather' => $weather
+            'location' => $location,
+            'temp' => [
+                'now' => $weather->conditionsshort->observation->metric->temp,
+                'min' => $weather->conditionsshort->observation->metric->min_temp,
+                'max' => $weather->conditionsshort->observation->metric->max_temp
+            ],
+            'phrase' => $weather->conditionsshort->observation->wx_phrase == "Fair" ? $weather->fcsthourly24short->forecasts[0]->phrase_22char : $weather->conditionsshort->observation->wx_phrase,
         ];
+
         return Helper::success($result);
     }
 
     public function nassaab(Request $request) {
-        Validator::make($request->all(), [
-            'item' => 'required|string|max:20'
-        ])->validate();
+//        Validator::make($request->all(), [
+//            'item' => 'required|string|max:20'
+//        ])->validate();
 
-        $item = trim($request->get('item'));
-
-        return Helper::success("soon");
+        return Helper::success("Soon");
     }
 
     public function filimo(Request $request) {
