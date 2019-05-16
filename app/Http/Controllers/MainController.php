@@ -9,18 +9,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class MainController extends Controller {
-    public function init(Request $request) {
+    public function init() {
         $Jdate = Jdate::instance();
         $IP = Helper::realIP();
         $date = $Jdate->jdate("Y/n/j", null, null, null, 'en');
         $dollar = $this->currency()->original["result"]["dollar"];
-        $weather = $this->weather($request)->original;
 
         $result = [
             'ip' => $IP,
             'date' => $date,
             'dollar' => $dollar,
-            'weather' => $weather
         ];
         return Helper::success($result);
     }
@@ -35,8 +33,12 @@ class MainController extends Controller {
         $result["soundcloud"] = Helper::ping("soundcloud.com");
         $result["youtube"] = Helper::ping("youtube.com");
         $result["bonbast"] = Helper::ping("bonbast.com");
-        $result["weather"] = Helper::ping("wttr.in");
+        $result["weather"] = [
+            'main' => Helper::ping("api.weather.com"),
+            'opencage' => Helper::ping("api.opencagedata.com")
+        ];
         $result["vajehyab"] = Helper::ping("vajehyab.com");
+        $result["sokhanak"] = Helper::ping("api.sokhanak.com");
         $result["emamsadegh"] = Helper::ping("iandish.ir");
         $result["npm"] = Helper::ping("npms.io");
         $result["packagist"] = Helper::ping("packagist.org");
@@ -137,7 +139,8 @@ class MainController extends Controller {
             $title = $getVideo->title;
             $link = $getVideo->link;
 
-            if ($title == " " || substr($link, -5) == "_.mp4") return Helper::failed("Censored video", 403);
+            if ($title == " " || substr($link, -5) == "_.mp4")
+                return Helper::failed("Censored video", 403);
 
             $result = [
                 'title' => $title,
@@ -321,13 +324,15 @@ class MainController extends Controller {
             'apiKey' => env('SOKHANAK_TOKEN'),
         ]);
 
-        $ch = curl_init($quote);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $quote);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
         $response = json_decode(curl_exec($ch));
 
         if (isset($response->error) || empty($response->quote_text))
-            return Helper::failed(502, 'SOKHANAK_ERROR');
+            return Helper::failed(502, 'Sokhanak error');
 
         $result = [
             'quote' => $response->quote_text,
