@@ -8,8 +8,9 @@ class AppHelper {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://handle.ahmadhashemi.com/nassaab/special/$action.php");
         curl_setopt($ch, CURLOPT_USERAGENT, 'Nassaab/1 CFNetwork/975.0.3 Darwin/18.2.0');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_POSTFIELDS, "email=$email&id=$id&version=$version");
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
         $response = curl_exec($ch);
@@ -21,8 +22,8 @@ class AppHelper {
     public static function receiver($link, $isNoFilter = 0) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://receiverdl.com/api/extract/action.php?link=$link&isNoFilter=$isNoFilter");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         $result = curl_exec($ch);
         curl_close($ch);
 

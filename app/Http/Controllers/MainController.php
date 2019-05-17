@@ -405,7 +405,7 @@ class MainController extends Controller {
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $weather = json_decode(curl_exec($ch));
 
-        if ($weather->metadata->status_code != 200 || $weather->conditionsshort->metadata->status_code != 200)
+        if (@$weather->metadata->status_code != 200 || @$weather->conditionsshort->metadata->status_code != 200)
             return Helper::failed("502", "Weather error");
 
         $ch = curl_init();
@@ -414,7 +414,7 @@ class MainController extends Controller {
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $opencage = json_decode(curl_exec($ch));
 
-        if ($opencage->status->code == 200) {
+        if (@$opencage->status->code == 200) {
             if (!empty($opencage->results[0]->components->city)) $location = $opencage->results[0]->components->city;
             else if (!empty($opencage->results[0]->components->state)) $location = $opencage->results[0]->components->state;
         }
@@ -426,7 +426,7 @@ class MainController extends Controller {
                 'min' => $weather->conditionsshort->observation->metric->min_temp,
                 'max' => $weather->conditionsshort->observation->metric->max_temp
             ],
-            'phrase' => $weather->conditionsshort->observation->wx_phrase == "Fair" ? $weather->fcsthourly24short->forecasts[0]->phrase_22char : $weather->conditionsshort->observation->wx_phrase,
+            'phrase' => str_replace(" ", "_", strtoupper($weather->conditionsshort->observation->wx_phrase))
         ];
 
         return Helper::success($result);
