@@ -58,8 +58,8 @@ class CinemaController extends Controller {
             $result = @json_decode(curl_exec($ch));
             curl_close($ch);
 
-            if ($query != @$result->PostId || !in_array(@$result->PostTypeSlug, ["movie", "episode"]))
-                return false;
+//            if ($query != @$result->PostId || !in_array(@$result->PostTypeSlug, ["movie", "episode"]))
+//                return false;
         }
         else return false;
 
@@ -262,6 +262,18 @@ class CinemaController extends Controller {
                 ];
             }
 
+            if ($movie->is_serial) {
+                $movieParts = $this->filimo($id, "movieserial", null, 16);
+                for ($i = 0; $i < count($movieParts); $i++) {
+                    if ($movieParts[$i]->uid == $id) continue;
+                    $parts[] = [
+                        'title' => trim($movieParts[$i]->movie_title),
+                        'id' => $movieParts[$i]->uid,
+                        'image' => $movieParts[$i]->movie_img_m
+                    ];
+                }
+            }
+
             $result = [
                 'title' => $title,
                 'image' => $image,
@@ -275,7 +287,8 @@ class CinemaController extends Controller {
                     'filimo' => $rate,
                 ],
                 'link' => $link,
-                'recommended' => $recommended
+                'serial' => isset($parts) ? $parts : null,
+                'recommended' => isset($recommended) ? $recommended : null
             ];
         }
         //Namava
@@ -326,6 +339,18 @@ class CinemaController extends Controller {
                 ];
             }
 
+            if ($movie->PostTypeSlug == "episode") {
+                $movieParts = $this->namava($movie->ParentPost->PostId, "movie", 16)->PostModels;
+                for ($i = 0; $i < count($movieParts); $i++) {
+                    if ($movieParts[$i]->PostId == $id) continue;
+                    $parts[] = [
+                        'title' => $movieParts[$i]->Name,
+                        'id' => $movieParts[$i]->PostId,
+                        'image' => str_replace("http://", "https://", $movieParts[$i]->ImageAbsoluteUrl)
+                    ];
+                }
+            }
+
             //Fetch Movie link
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "http://shahbaghi.com/F/data/namavaa/stream.php");
@@ -348,6 +373,7 @@ class CinemaController extends Controller {
                     'genres' => $genres,
                     'rate' => $rate,
                     'link' => $m3u8,
+                    'serial' => isset($parts) ? $parts : null,
                     'recommended' => !empty($recommended) ? $recommended : null
                 ];
             }
