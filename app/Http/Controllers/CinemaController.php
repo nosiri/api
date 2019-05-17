@@ -253,6 +253,15 @@ class CinemaController extends Controller {
             if (!empty($movie->category_1)) $genres[] = $movie->category_1;
             if (!empty($movie->category_2)) $genres[] = $movie->category_2;
 
+            $recommendedMovies = $this->filimo($id, "recom", null, 8);
+            for ($i = 0; $i < count($recommendedMovies); $i++) {
+                $recommended[] = [
+                    'title' => $recommendedMovies[$i]->movie_title,
+                    'id' => $recommendedMovies[$i]->uid,
+                    'image' => $recommendedMovies[$i]->movie_img_m
+                ];
+            }
+
             $result = [
                 'title' => $title,
                 'image' => $image,
@@ -265,7 +274,8 @@ class CinemaController extends Controller {
                     'imdb' => $imdb,
                     'filimo' => $rate,
                 ],
-                'link' => $link
+                'link' => $link,
+                'recommended' => $recommended
             ];
         }
         //Namava
@@ -301,7 +311,6 @@ class CinemaController extends Controller {
 
 
             $category = $movie->PostCategories[0]->PostCategoryId;
-            //Recommends
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "http://www.namava.ir/api2/recommender/recommendedByPost/$id/$category/8");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
