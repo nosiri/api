@@ -426,7 +426,13 @@ class MainController extends Controller {
                 'min' => $weather->conditionsshort->observation->metric->min_temp,
                 'max' => $weather->conditionsshort->observation->metric->max_temp
             ],
-            'phrase' => str_replace(" ", "_", strtoupper($weather->conditionsshort->observation->wx_phrase))
+            'phrase' => str_replace(" ", "_", strtoupper($weather->conditionsshort->observation->wx_phrase)),
+            'wind' => $weather->conditionsshort->observation->metric->wspd,
+            'uv' => $weather->conditionsshort->observation->uv_index == 0 ? null : [
+                'index' => $weather->conditionsshort->observation->uv_index,
+                'text' => $weather->conditionsshort->observation->uv_desc
+            ],
+            'rain' => $weather->conditionsshort->observation->metric->precip_total
         ];
 
         return Helper::success($result);
