@@ -236,18 +236,9 @@ class CinemaController extends Controller {
             if (@empty($movie->uid) || @$movie->uid != $id)
                 return Helper::failed("Filimo incorrect id", 400);
 
-            $title = $movie->movie_title;
-            $image = $movie->movie_img_b;
-            $cover = $movie->cover == "yes" ? $movie->cover_adr : null;
-            $description = $movie->description;
-            $year = (int)$movie->produced_year;
-            $duration = (int)$movie->duration;
-            $imdb = $movie->imdb_rate && $movie->imdb_rate != 0 ? (float)$movie->imdb_rate : null;
-            $rate = $movie->rate_avrage ? (float)$movie->rate_avrage : null;
-
-            $user = env('FILIMO_USER');
-            $token = env('FILIMO_TOKEN');
-            $link = "https://www.filimo.com/etc/api/movie/uid/$id/luser/$user/ltoken/$token/devicetype/ios";
+            if ((float)$movie->imdb_rate) $rate = (float)$movie->imdb_rate;
+            else if ($movie->rate_avrage) $rate = (float)$movie->rate_avrage * 2;
+            else $rate = null;
 
             $genres = [];
             if (!empty($movie->category_1)) $genres[] = $movie->category_1;
@@ -275,18 +266,15 @@ class CinemaController extends Controller {
             }
 
             $result = [
-                'title' => $title,
-                'image' => $image,
-                'cover' => $cover,
-                'description' => $description,
-                'year' => $year,
-                'duration' => $duration,
+                'title' => $movie->movie_title,
+                'image' => $movie->movie_img_b,
+                'cover' => $movie->cover == "yes" ? $movie->cover_adr : null,
+                'description' => $movie->description,
+                'year' => (int)$movie->produced_year,
+                'duration' => (int)$movie->duration,
                 'genres' => $genres,
-                'rate' => [
-                    'imdb' => $imdb,
-                    'filimo' => $rate,
-                ],
-                'link' => $link,
+                'rate' => $rate,
+                'link' => $movie->movie_src,
                 'serial' => isset($parts) ? $parts : null,
                 'recommended' => isset($recommended) ? $recommended : null
             ];
@@ -297,10 +285,6 @@ class CinemaController extends Controller {
 
             if ($id != @$movie->PostId || !in_array($movie->PostTypeSlug, ["movie", "episode"]))
                 return Helper::failed("Namava incorrect id", 400);
-
-            $title = $movie->Name;
-            $image = $movie->ImageAbsoluteUrl;
-            $image = str_replace("http://", "https://", $image);
 
             $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $movie->FullDescription))));
             preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $newDescription);
@@ -364,8 +348,8 @@ class CinemaController extends Controller {
             if (empty($m3u8)) $result = false;
             else {
                 $result = [
-                    'title' => $title,
-                    'image' => $image,
+                    'title' => $movie->Name,
+                    'image' => $image = str_replace("http://", "https://", $movie->ImageAbsoluteUrl),
                     'cover' => !empty($cover) ? "https://static.namava.ir" . $cover : null,
                     'description' => $description,
                     'year' => $year,
@@ -421,12 +405,12 @@ class CinemaController extends Controller {
             $result = [
                 'title' => $filimo->movie_title,
                 'image' => $filimo->movie_img_b,
-                'description' => mb_strlen($filimoDescription) > $namavaDescription ? $filimoDescription : $namavaDescription,
+                'description' => mb_strlen($filimoDescription) > mb_strlen($namavaDescription) ? $filimoDescription : $namavaDescription,
                 'cover' => $filimo->cover == "yes" ? $filimo->cover_adr : false,
                 'year' => (int)$filimo->produced_year,
                 'duration' => (int)$filimo->duration,
                 'genres' => count($filimoGenres) > count($namavaGenres) ? $filimoGenres : $namavaGenres,
-                'rate' => $filimo->imdb_rate != 0 ? (float)$filimo->imdb_rate : (float)$filimo->rate_avrage,
+                'rate' => (float)$filimo->imdb_rate ? (float)$filimo->imdb_rate : (float)$filimo->rate_avrage * 2,
                 'link' => [
                     'filimo' => $filimo->movie_src,
                     'namava' => $namavaLink
