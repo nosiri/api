@@ -6,6 +6,7 @@ use App\Helpers\AppHelper as Helper;
 use App\Helpers\Jdate;
 use DOMDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class MainController extends Controller {
@@ -47,47 +48,53 @@ class MainController extends Controller {
     }
 
     public function currency() {
-        $Jdate = Jdate::instance();
+        if (Cache::has('currency')) $result = Cache::get('currency');
+        else {
+            $Jdate = Jdate::instance();
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        $html = curl_exec($ch);
-        curl_close($ch);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            $html = curl_exec($ch);
+            curl_close($ch);
 
-        $dom = new DOMDocument();
-        @$dom->loadHTML($html);
-        $hash = $dom->getElementById("hash")->textContent;
-        $lastUpdate = $Jdate->jdate("Y/n/j G:i:s", strtotime($dom->getElementById('last_modified')->textContent), null, null, 'en');
+            $dom = new DOMDocument();
+            @$dom->loadHTML($html);
+            $hash = $dom->getElementById("hash")->textContent;
+            $lastUpdate = $Jdate->jdate("Y/n/j G:i:s", strtotime($dom->getElementById('last_modified')->textContent), null, null, 'en');
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/json');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
-        curl_setopt($ch, CURLOPT_REFERER, 'https://bonbast.com/');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, "hash=$hash");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Requested-With: XMLHttpRequest']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        $response = json_decode(curl_exec($ch));
-        curl_close($ch);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://bonbast.com/json');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_USERAGENT, env('FAKE_USERAGENT'));
+            curl_setopt($ch, CURLOPT_REFERER, 'https://bonbast.com/');
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "hash=$hash");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Requested-With: XMLHttpRequest']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            $response = json_decode(curl_exec($ch));
+            curl_close($ch);
 
-        $dollar = (int)$response->usd1;
-        $euro = (int)$response->eur1;
-        $gold = (int)$response->gol18;
-        $bitcoin = (int)$response->bitcoin * $dollar;
-        $emamiCoin = (int)$response->emami1;
+            $dollar = (int)$response->usd1;
+            $euro = (int)$response->eur1;
+            $gold = (int)$response->gol18;
+            $bitcoin = (int)$response->bitcoin * $dollar;
+            $emamiCoin = (int)$response->emami1;
 
-        $result = [
-            'last_update' => $lastUpdate,
-            'dollar' => $dollar,
-            'euro' => $euro,
-            'gold' => $gold,
-            'bitcoin' => $bitcoin,
-            'emami_coin' => $emamiCoin
-        ];
+            $result = [
+                'last_update' => $lastUpdate,
+                'dollar' => $dollar,
+                'euro' => $euro,
+                'gold' => $gold,
+                'bitcoin' => $bitcoin,
+                'emami_coin' => $emamiCoin
+            ];
+
+            Cache::put('currency', $result, 2 * 60);
+        }
+
         return Helper::success($result);
     }
 
