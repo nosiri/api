@@ -339,7 +339,7 @@ class MainController extends Controller {
         $response = json_decode(curl_exec($ch));
 
         if (isset($response->error) || empty($response->quote_text))
-            return Helper::failed(502, 'Sokhanak error');
+            return Helper::failed('Sokhanak error', 502);
 
         $result = [
             'quote' => $response->quote_text,
