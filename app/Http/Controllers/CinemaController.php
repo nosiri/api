@@ -265,6 +265,16 @@ class CinemaController extends Controller {
                 }
             }
 
+            if ($movie->subtitle_data->subtitle) {
+                $subtitle = $movie->subtitle_data->subtitle;
+                for ($i = 0; $i < count($subtitle); $i++) {
+                    $subtitles[] = [
+                        'title' => $subtitle[$i]->lng_fa,
+                        'url' => $subtitle[$i]->src_vtt
+                    ];
+                }
+            }
+
             $result = [
                 'title' => $movie->movie_title,
                 'image' => $movie->movie_img_b,
@@ -275,6 +285,7 @@ class CinemaController extends Controller {
                 'genres' => $genres,
                 'rate' => $rate,
                 'link' => $movie->movie_src,
+                'subtitle' => isset($subtitles) ? $subtitles : null,
                 'serial' => isset($parts) ? $parts : null,
                 'recommended' => isset($recommended) ? $recommended : null
             ];
@@ -289,6 +300,8 @@ class CinemaController extends Controller {
             $description = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $movie->FullDescription))));
             preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $description, $newDescription);
             $description = !empty(@$newDescription[0][0]) ? $newDescription[0][0] : $description;
+            if (strstr($description, "داستان فیلم:\r\n"))
+                $description = str_replace("داستان فیلم:\r\n", "", $description);
 
             $year = null;
             $duration = null;
@@ -296,10 +309,13 @@ class CinemaController extends Controller {
             $cover = null;
 
             for ($i = 0; $i < count($movie->PostTypeAttrValueModels); $i++) {
-                if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-year") $year = (int)$movie->PostTypeAttrValueModels[$i]->Value;
-                else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-duration") $duration = (int)$movie->PostTypeAttrValueModels[$i]->Value;
-                else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-imdb-rate") $rate = (float)$movie->PostTypeAttrValueModels[$i]->Value;
-                else if ($movie->PostTypeAttrValueModels[$i]->Key == "movie-hero-image") $cover = $movie->PostTypeAttrValueModels[$i]->Value;
+                $model = $movie->PostTypeAttrValueModels[$i];
+
+                if ($model->Key == "movie-year") $year = (int)$model->Value;
+                else if ($model->Key == "movie-duration") $duration = (int)$model->Value;
+                else if ($model->Key == "movie-imdb-rate") $rate = (float)$model->Value;
+                else if ($model->Key == "movie-hero-image") $cover = $model->Value;
+                else if (empty($cover) && $model->Key == "movie-image") $cover = $model->Value;
             }
 
             $genres = [];
@@ -385,6 +401,8 @@ class CinemaController extends Controller {
             $namavaDescription = trim(html_entity_decode(strip_tags(str_replace(["<br>", "<br/>", "<br />"], "\r\n", $namava->FullDescription))));
             preg_match_all('/^داستان (?:فیلم|قسمت):\r\n.+/m', $namavaDescription, $namavaDescription);
             $namavaDescription = $namavaDescription[0][0];
+            if (strstr($namavaDescription, "داستان فیلم:\r\n"))
+                $namavaDescription = str_replace("داستان فیلم:\r\n", "", $namavaDescription);
 
             $filimoGenres = [];
             if (!empty($filimo->category_1)) $filimoGenres[] = $filimo->category_1;
