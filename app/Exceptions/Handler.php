@@ -49,7 +49,7 @@ class Handler extends ExceptionHandler
         if ($exception instanceof NotFoundHttpException) return Helper::failed("Unknown endpoint", 404);
         if ($exception instanceof ValidationException) return Helper::failed("Bad data", 400);
 
-//        return parent::render($request, $exception);
-        return Helper::failed("Internal Error", 500);
+        if (env('APP_DEBUG')) return parent::render($request, $exception);
+        else return Helper::failed("Internal Error", 500);
     }
 }
