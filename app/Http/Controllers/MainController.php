@@ -426,6 +426,15 @@ class MainController extends Controller {
             else if (!empty($opencage->results[0]->components->state)) $location = $opencage->results[0]->components->state;
         }
 
+        $phrase = str_replace(" ", "_", strtoupper($weather->conditionsshort->observation->wx_phrase));
+        if (strstr($phrase, "/")) {
+            $exp = explode("/", $phrase);
+            $phrase = [];
+            for ($i = 0; $i < count($exp); $i++) {
+                $phrase[] = $exp[$i];
+            }
+        }
+
         $result = [
             'location' => $location,
             'temp' => [
@@ -433,7 +442,7 @@ class MainController extends Controller {
                 'min' => $weather->conditionsshort->observation->metric->min_temp,
                 'max' => $weather->conditionsshort->observation->metric->max_temp
             ],
-            'phrase' => str_replace(" ", "_", strtoupper($weather->conditionsshort->observation->wx_phrase)),
+            'phrase' => $phrase,
             'wind' => $weather->conditionsshort->observation->metric->wspd,
             'uv' => $weather->conditionsshort->observation->uv_index == 0 ? null : [
                 'index' => $weather->conditionsshort->observation->uv_index,
