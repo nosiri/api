@@ -48,7 +48,7 @@ class MainController extends Controller {
     }
 
     public function currency() {
-        if (Cache::has('currency')) $result = Cache::get('currency');
+        if (env('APP_CACHE') && Cache::has('currency')) $result = Cache::get('currency');
         else {
             $Jdate = Jdate::instance();
 
@@ -92,7 +92,7 @@ class MainController extends Controller {
                 'emami_coin' => $emamiCoin
             ];
 
-            Cache::put('currency', $result, 2 * 60);
+            if (env('APP_CACHE')) Cache::put('currency', $result, 2 * 60);
         }
 
         return Helper::success($result);
