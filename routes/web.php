@@ -58,8 +58,6 @@ $router->group(['middleware' => ['auth', 'headers']], function () use ($router) 
 
     $router->get('nassaab', 'MainController@nassaab');
 
-    $router->get('filimo', 'MainController@filimo');
-
     $router->group(['prefix' => 'cinema'], function () use ($router) {
         $router->get('/', 'CinemaController@home');
         $router->get('search', 'CinemaController@search');
