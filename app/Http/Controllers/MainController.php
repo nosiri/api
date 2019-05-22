@@ -453,12 +453,4 @@ class MainController extends Controller {
 
         return Helper::success($result);
     }
-
-    public function nassaab(Request $request) {
-//        Validator::make($request->all(), [
-//            'item' => 'required|string|max:20'
-//        ])->validate();
-
-        return Helper::success("Soon");
-    }
 }
